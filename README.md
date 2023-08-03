@@ -1,4 +1,4 @@
-#Belen Torres Preaching The Truth
+# Belen Torres Preaching The Truth
 Welcome to the repository for "Belen Torres Preaching The Truth"! This game puts you in the shoes of a door-to-door preacher, whose mission is to convert as many souls as possible to your chosen faith.
 
 Gameplay
