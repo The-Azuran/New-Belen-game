@@ -5,6 +5,7 @@ class NPC:
     def __init__(self):
         self.converted = False
         self.failed_attempts = 0
+        self.resistant = random.choice([True, False])  # New attribute
 
 class Location:
     def __init__(self, num_npcs):
@@ -163,11 +164,16 @@ class Game:
         print(f"You've chosen to: {self.strategy}\n")
 
     def encounter(self, npc_id):
+        chosen_npc = self.chosen_location.npcs[npc_id]
+        if chosen_npc.resistant:  # Check if the NPC is resistant to conversion
+            print("This person is resistant to conversion.")
+            return  # Skip the rest of the method
+
         conversion_rate_multiplier = self.chosen_location.get_conversion_rate_multiplier()
         # Adjust the conversion rates according to the conversion rate multiplier
         for religion in self.conversion_rates:
             self.conversion_rates[religion] *= conversion_rate_multiplier
-        chosen_npc = self.chosen_location.npcs[npc_id]
+
         conversion_rate = max(0, self.conversion_rates[self.religion] - chosen_npc.failed_attempts * 0.1)
         responses = ['bad', 'nice']
         response = random.choices(
@@ -175,6 +181,7 @@ class Game:
             weights=[1 - conversion_rate, conversion_rate],
             k=1
         )[0]
+
         if response == 'bad':
             print("The person is not interested.")
             self.bad_response()
@@ -196,13 +203,6 @@ class Game:
         if eat_food.lower() == 'y':
             print("You eat the food and feel less hungry.\n")
             self.hunger = max(0, self.hunger - 20)
-
-
-    def find_food(self):
-        take_food = input("You find some food. Do you want to take it? (y/n) ")
-        if take_food.lower() == 'y':
-            print("You take the food and eat it.")
-            self.hunger = max(0, self.hunger - 15)
 
     def bad_response(self):
         if random.random() < 0.1:  # 10% chance of receiving a food donation or meeting another Satanic preacher
@@ -258,10 +258,9 @@ class Game:
         print(f"Weather: {self.weather}")
         input("\nPress Enter to continue...")
 
-
-
 game = Game()
 game.start_game()
+
 
 
 
