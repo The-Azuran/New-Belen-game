@@ -32,6 +32,7 @@ from .ui import ConsoleUI
 from .conversation import ConversationEngine, ConversationState
 from .memory import MemoryManager
 from .narrative import NarrativeEngine, NarrativeContext
+from .preachers import PREACHERS, create_custom_preacher
 
 
 class Game:
@@ -49,6 +50,7 @@ class Game:
     def run(self) -> None:
         """Run the main game loop."""
         self.ui.display_welcome()
+        self._choose_preacher()
         self._choose_religion()
 
         for _ in range(GAME_DAYS):
@@ -57,6 +59,47 @@ class Game:
             self.state.advance_day()
 
         self._end_game()
+
+    def _choose_preacher(self) -> None:
+        """Let the player choose their preacher character."""
+        print("Choose your preacher:\n")
+
+        # Display preset preachers
+        for i, preacher in enumerate(PREACHERS, start=1):
+            print(f"{i}. {preacher.name}")
+            print(f"   {preacher.description}")
+            print(f"   Special: {preacher.special}")
+            print()
+
+        # Custom option
+        custom_idx = len(PREACHERS) + 1
+        print(f"{custom_idx}. Custom Character")
+        print("   Create your own preacher with balanced stats")
+        print()
+
+        choice = self.ui._get_valid_input("Enter your choice: ", 1, custom_idx)
+
+        if choice == custom_idx:
+            # Custom character
+            name = input("Enter your preacher's name: ").strip()
+            if not name:
+                name = "The Preacher"
+            preacher = create_custom_preacher(name)
+        else:
+            preacher = PREACHERS[choice - 1]
+
+        # Apply preacher to state
+        self.state.preacher_name = preacher.name
+        self.state.preacher_id = preacher.id
+        preacher.apply_to_state(self.state)
+
+        # Apply starting reputation bonus if any
+        if preacher.reputation_bonus != 0:
+            for neighborhood in self.state.neighborhoods:
+                self.state.reputation.modify_reputation(neighborhood.name, preacher.reputation_bonus)
+
+        self.ui.display_choice_confirmation("preacher", preacher.name)
+        print(f"Special ability: {preacher.special}\n")
 
     def _get_narrative_context(self) -> NarrativeContext:
         """Build current narrative context from game state."""
@@ -157,6 +200,8 @@ class Game:
         assert self.state.county is not None
         towns = self.state.county.towns
 
+        self.ui.clear_screen()
+        print(f"=== {self.state.county.name} ===\n")
         print("Choose a town (or 0 to stay at county level):\n")
         self.ui.display_towns(towns)
         choice = self.ui._get_valid_input("Enter your choice: ", 0, len(towns))
@@ -174,6 +219,8 @@ class Game:
         assert self.state.current_town is not None
         neighborhoods = self.state.current_town.neighborhoods
 
+        self.ui.clear_screen()
+        print(f"=== {self.state.current_town.name} ===\n")
         print("Choose a neighborhood (or 0 to go back to town selection):\n")
         self.ui.display_neighborhoods(neighborhoods)
         choice = self.ui._get_valid_input("Enter your choice: ", 0, len(neighborhoods))
@@ -199,6 +246,8 @@ class Game:
         assert self.state.current_neighborhood is not None
         streets = self.state.current_neighborhood.streets
 
+        self.ui.clear_screen()
+        print(f"=== {self.state.current_neighborhood.name} ===\n")
         print("Choose a street (or 0 to go back to neighborhood selection):\n")
         self.ui.display_streets(streets)
         choice = self.ui._get_valid_input("Enter your choice: ", 0, len(streets))
@@ -216,6 +265,8 @@ class Game:
         assert self.state.current_street is not None
         locations = self.state.current_street.locations
 
+        self.ui.clear_screen()
+        print(f"=== {self.state.current_street.name} ===\n")
         print("Choose a location (or 0 to go back to street selection):\n")
         self.ui.display_locations(locations)
         choice = self.ui._get_valid_input("Enter your choice: ", 0, len(locations))
@@ -450,7 +501,8 @@ class Game:
             return
 
         while True:
-            print("\nWhat would you like to do?")
+            self.ui.clear_screen()
+            print("What would you like to do?")
             print("1. Choose another location on this street")
             print("2. Go to a different street")
             print("3. Go to a different neighborhood")
@@ -501,7 +553,11 @@ class Game:
             npc,
             reputation_bonus=rep_bonus,
             pamphlet_tags=self.state.active_pamphlet_tags,
+            preacher_personality_bonus=self.state.preacher_personality_bonus,
         )
+
+        # Clear screen for fresh conversation
+        self.ui.clear_screen()
 
         # Display conversation start
         mood_hint = self.ui.display_npc_mood_hint(conv_state.mood)
@@ -528,6 +584,10 @@ class Game:
         # Main conversation loop
         current_objection = None
         while not result.conversation_ended:
+            # Clear screen each turn to reduce clutter
+            self.ui.clear_screen()
+            self.ui.display_conversation_header(npc.name, conv_state.interest)
+
             # Get next objection from NPC
             current_objection = self.conversation.get_next_objection(conv_state)
             self.ui.display_objection(current_objection["text"])

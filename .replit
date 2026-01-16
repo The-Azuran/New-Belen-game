@@ -1,0 +1,9 @@
+run = "python -m preaching"
+entrypoint = "preaching/__main__.py"
+language = "python3"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = "python -m preaching"

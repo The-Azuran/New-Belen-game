@@ -55,13 +55,24 @@ class ConsoleUI:
 
     def display_welcome(self) -> None:
         """Display the welcome message and instructions."""
-        print("Welcome to Belen Torres Preaching The Truth\n")
-        print("In this game, you play as a preacher for a chosen religion. Your goal is to win as many souls as you can by going door-to-door and preaching your faith. Your performance is scored based on the number of souls won.\n")
-        print("Each day you will encounter various responses from people behind the doors, and your hunger will increase as you continue preaching. When your hunger reaches 100, the day ends and you must go home to rest.\n")
+        print("=" * 50)
+        print("       PREACHING THE TRUTH")
+        print("=" * 50)
+        print()
+        print("       Dedicated to my sister, Monica Huertas")
+        print()
+        print("-" * 50)
+        print()
+        print("In this game, you play as a preacher for a chosen religion.")
+        print("Your goal is to win as many souls as you can by going")
+        print("door-to-door and preaching your faith.\n")
+        print("Each day you will encounter various responses from people.")
+        print("Your hunger increases as you preach. When it reaches 100,")
+        print("the day ends and you must go home to rest.\n")
         print("CONTROLS:")
-        print("  Press 'i' at any prompt to check your status")
+        print("  Press 'i' at any prompt to check your inventory/status")
         print("  Press '0' to go back/leave the current area\n")
-        print("Now, let's begin. Choose your religion...\n")
+        print("Now, let's begin by choosing your preacher...\n")
 
     def display_menu(self, title: str, options: list[str]) -> int:
         """Display a numbered menu and get user choice (1-indexed)."""
@@ -455,6 +466,7 @@ class ConsoleUI:
         print("=" * 40)
         print("         MINISTRY DASHBOARD")
         print("=" * 40)
+        print(f"Preacher: {state.preacher_name}")
         print(f"Day: {DAYS[state.day_of_week]}")
         print(f"Weather: {state.weather.value}")
         print("-" * 40)
@@ -499,6 +511,16 @@ class ConsoleUI:
         if personality_hint:
             print(f"({personality_hint})")
         print()
+
+    def display_conversation_header(self, npc_name: str, interest: int) -> None:
+        """Display a compact header for ongoing conversation turns."""
+        print(f"{'='*50}")
+        print(f"  Talking to: {npc_name}")
+        # Visual interest indicator
+        bar_pos = max(0, min(20, int((interest + 50) / 5)))
+        bar = "=" * bar_pos + "-" * (20 - bar_pos)
+        print(f"  Interest: [{bar}]")
+        print(f"{'='*50}\n")
 
     def display_npc_mood_hint(self, mood: str) -> str:
         """Get visual hint for NPC mood."""

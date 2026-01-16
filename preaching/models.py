@@ -279,6 +279,12 @@ class GameState:
     active_pamphlet_tags: list[str] = field(default_factory=list)
     # Player inventory
     inventory: list[InventoryItem] = field(default_factory=list)
+    # Preacher/Character system
+    preacher_name: str = "Belen Torres"
+    preacher_id: str = "belen"
+    preacher_conversion_bonus: float = 0.0
+    preacher_hunger_rate: float = 1.0
+    preacher_personality_bonus: dict[str, float] = field(default_factory=dict)
 
     @classmethod
     def create_new_game(cls) -> GameState:
@@ -318,9 +324,13 @@ class GameState:
 
     def get_total_conversion_bonus(self) -> float:
         """Get total conversion bonus from items and effects."""
-        bonus = self.bible_bonus + self.satanic_bonus
+        bonus = self.bible_bonus + self.satanic_bonus + self.preacher_conversion_bonus
         if self.pamphlet_boost_remaining > 0:
             bonus += self.pamphlet_boost_amount
         if self.current_neighborhood:
             bonus += self.current_neighborhood.get_total_conversion_modifier()
         return bonus
+
+    def get_personality_bonus(self, personality: str) -> float:
+        """Get bonus for a specific NPC personality based on preacher."""
+        return self.preacher_personality_bonus.get(personality, 0.0)

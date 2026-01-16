@@ -51,13 +51,26 @@ class ConversationState:
     objections_raised: list[str] = field(default_factory=list)
     opener_used: Optional[str] = None
     active_pamphlet_tags: list[str] = field(default_factory=list)
+    preacher_personality_bonus: dict[str, float] = field(default_factory=dict)
 
     @classmethod
-    def start(cls, npc: NPC, reputation_bonus: int = 0, pamphlet_tags: list[str] | None = None) -> ConversationState:
+    def start(
+        cls,
+        npc: NPC,
+        reputation_bonus: int = 0,
+        pamphlet_tags: list[str] | None = None,
+        preacher_personality_bonus: dict[str, float] | None = None,
+    ) -> ConversationState:
         """Start a new conversation with an NPC."""
         mood_data = MOODS.get(npc.mood, MOODS["neutral"])
         starting_interest = mood_data["interest_bonus"] + reputation_bonus
         patience = mood_data["patience"]
+
+        # Apply preacher's personality bonus as starting interest
+        personality_bonus = preacher_personality_bonus or {}
+        if npc.personality in personality_bonus:
+            # Convert percentage to interest points (e.g., 0.10 = +5 interest)
+            starting_interest += int(personality_bonus[npc.personality] * 50)
 
         # Resistant NPCs start with a severe interest penalty
         if npc.resistant:
@@ -71,6 +84,7 @@ class ConversationState:
             interest=starting_interest,
             patience=patience,
             active_pamphlet_tags=pamphlet_tags or [],
+            preacher_personality_bonus=personality_bonus,
         )
 
 

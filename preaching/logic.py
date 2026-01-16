@@ -76,6 +76,8 @@ def apply_hunger(state: GameState, amount: int | None = None) -> int:
             amount = HUNGER_HARSH_WEATHER
         else:
             amount = HUNGER_NICE_WEATHER
+    # Apply preacher's hunger rate modifier
+    amount = int(amount * state.preacher_hunger_rate)
     state.hunger += amount
     return state.hunger
 
