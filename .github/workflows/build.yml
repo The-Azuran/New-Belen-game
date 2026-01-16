@@ -60,16 +60,19 @@ jobs:
         with:
           path: artifacts
 
-      - name: Display structure
-        run: ls -R artifacts
+      - name: Rename files for release
+        run: |
+          mv artifacts/Preaching-linux-x64/Preaching artifacts/Preaching-linux-x64/Preaching-linux-x64
+          mv artifacts/Preaching-macos-x64/Preaching artifacts/Preaching-macos-x64/Preaching-macos-x64
+          ls -R artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/Preaching-linux-x64/Preaching
+            artifacts/Preaching-linux-x64/Preaching-linux-x64
             artifacts/Preaching-windows-x64.exe/Preaching.exe
-            artifacts/Preaching-macos-x64/Preaching
+            artifacts/Preaching-macos-x64/Preaching-macos-x64
           generate_release_notes: true
           draft: false
           prerelease: false
