@@ -13,6 +13,9 @@ from .names import (
     generate_library_name,
     generate_house_address,
     generate_neighborhood_name,
+    generate_street_name,
+    generate_town_name,
+    generate_county_name,
 )
 from .config import LOCATION_WEIGHTS, STARTING_MONEY
 from .dialogue import PERSONALITIES, MOODS
@@ -150,24 +153,99 @@ class Location:
 
 
 @dataclass
-class Neighborhood:
-    """A collection of locations."""
+class Street:
+    """A street containing locations."""
     name: str = ""
     locations: list[Location] = field(default_factory=list)
+
+    @classmethod
+    def create(cls, num_locations: int = 0) -> Street:
+        """Create a street with random locations."""
+        if num_locations == 0:
+            num_locations = random.randint(3, 6)
+        locations = [Location.create_random() for _ in range(num_locations)]
+        return cls(
+            name=generate_street_name(),
+            locations=locations,
+        )
+
+
+@dataclass
+class Neighborhood:
+    """A collection of streets."""
+    name: str = ""
+    streets: list[Street] = field(default_factory=list)
     church_influence: float = 0.0  # Buff/debuff from churches
 
     @classmethod
-    def create(cls, num_locations: int) -> Neighborhood:
-        """Create a neighborhood with random locations."""
-        locations = [Location.create_random() for _ in range(num_locations)]
+    def create(cls, num_streets: int = 0) -> Neighborhood:
+        """Create a neighborhood with random streets."""
+        if num_streets == 0:
+            num_streets = random.randint(2, 5)
+        streets = [Street.create() for _ in range(num_streets)]
         return cls(
             name=generate_neighborhood_name(),
-            locations=locations,
+            streets=streets,
         )
+
+    @property
+    def locations(self) -> list[Location]:
+        """Get all locations across all streets (for backward compatibility)."""
+        all_locations = []
+        for street in self.streets:
+            all_locations.extend(street.locations)
+        return all_locations
 
     def get_total_conversion_modifier(self) -> float:
         """Get total conversion modifier including church influence."""
         return self.church_influence
+
+
+@dataclass
+class Town:
+    """A town containing neighborhoods."""
+    name: str = ""
+    neighborhoods: list[Neighborhood] = field(default_factory=list)
+
+    @classmethod
+    def create(cls, num_neighborhoods: int = 0) -> Town:
+        """Create a town with random neighborhoods."""
+        if num_neighborhoods == 0:
+            num_neighborhoods = random.randint(2, 3)
+        neighborhoods = [Neighborhood.create() for _ in range(num_neighborhoods)]
+        return cls(
+            name=generate_town_name(),
+            neighborhoods=neighborhoods,
+        )
+
+
+@dataclass
+class County:
+    """A county containing towns."""
+    name: str = ""
+    towns: list[Town] = field(default_factory=list)
+
+    @classmethod
+    def create(cls, num_towns: int = 3) -> County:
+        """Create a county with random towns."""
+        towns = [Town.create() for _ in range(num_towns)]
+        return cls(
+            name=generate_county_name(),
+            towns=towns,
+        )
+
+
+@dataclass
+class InventoryItem:
+    """An item stored in the player's inventory."""
+    item_type: str  # "food" or "pamphlet"
+    name: str
+    description: str
+    # For food items
+    hunger_restore: int = 0
+    # For pamphlets
+    pamphlet_id: str = ""
+    pamphlet_tags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -180,9 +258,14 @@ class GameState:
     religion: Religion = Religion.EVANGELIST
     strategy: Strategy = Strategy.SOFT
     weather: Weather = Weather.NICE
-    neighborhoods: list[Neighborhood] = field(default_factory=list)
+    # World hierarchy
+    county: Optional[County] = None
+    current_town: Optional[Town] = None
     current_neighborhood: Optional[Neighborhood] = None
+    current_street: Optional[Street] = None
     chosen_location: Optional[Location] = None
+    # Legacy compatibility (points to all neighborhoods in county)
+    neighborhoods: list[Neighborhood] = field(default_factory=list)
     day_of_week: int = 0
     daily_score: int = 0
     satanic_bonus: float = 0.0
@@ -194,14 +277,23 @@ class GameState:
     reputation: ReputationManager = field(default_factory=ReputationManager)
     # Active pamphlet for conversations
     active_pamphlet_tags: list[str] = field(default_factory=list)
+    # Player inventory
+    inventory: list[InventoryItem] = field(default_factory=list)
 
     @classmethod
     def create_new_game(cls) -> GameState:
-        """Create a fresh game state with generated neighborhoods."""
+        """Create a fresh game state with generated world."""
+        # Create the world hierarchy: 1 county, 3 towns, 2-3 neighborhoods each
+        county = County.create(num_towns=3)
+
+        # Build flat list of neighborhoods for backward compatibility
+        all_neighborhoods = []
+        for town in county.towns:
+            all_neighborhoods.extend(town.neighborhoods)
+
         return cls(
-            neighborhoods=[
-                Neighborhood.create(random.randint(5, 12)) for _ in range(2)
-            ]
+            county=county,
+            neighborhoods=all_neighborhoods,
         )
 
     def reset_for_new_day(self) -> None:

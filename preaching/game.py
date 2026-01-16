@@ -40,6 +40,7 @@ class Game:
     def __init__(self, ui: ConsoleUI) -> None:
         self.ui = ui
         self.state = GameState.create_new_game()
+        self.ui.set_game_state(self.state)  # Enable status view via 'i' key
         self.events = EventManager()
         self.conversation = ConversationEngine()
         self.memory = MemoryManager()
@@ -127,18 +128,62 @@ class Game:
         journal_entry = self.narrative.generate_journal_entry(summary)
         self.ui.display_journal_entry(journal_entry)
 
-    def _choose_neighborhood_and_location(self) -> None:
-        """Let the player choose a neighborhood and location."""
-        # Choose neighborhood
-        print("Choose your neighborhood:\n")
-        self.ui.display_neighborhoods(self.state.neighborhoods)
-        choice = self.ui._get_valid_input(
-            "Enter the number of your choice: ", 1, len(self.state.neighborhoods)
-        )
-        self.state.current_neighborhood = self.state.neighborhoods[choice - 1]
-        self.ui.display_choice_confirmation(
-            "neighborhood", self.state.current_neighborhood.name
-        )
+    def _navigate_world(self) -> None:
+        """Full world navigation: County → Town → Neighborhood → Street → Location."""
+        assert self.state.county is not None
+
+        # Show county name once
+        print(f"\n=== {self.state.county.name} ===\n")
+
+        while True:
+            # Choose Town
+            if not self._choose_town():
+                continue  # User pressed 0, but can't go higher, so loop
+
+            # Choose Neighborhood
+            if not self._choose_neighborhood():
+                continue  # Go back to town selection
+
+            # Choose Street
+            if not self._choose_street():
+                continue  # Go back to neighborhood selection
+
+            # Choose Location
+            if self._choose_location():
+                break  # Location chosen, exit navigation
+
+    def _choose_town(self) -> bool:
+        """Choose a town within the county. Returns True if chosen, False to go back."""
+        assert self.state.county is not None
+        towns = self.state.county.towns
+
+        print("Choose a town (or 0 to stay at county level):\n")
+        self.ui.display_towns(towns)
+        choice = self.ui._get_valid_input("Enter your choice: ", 0, len(towns))
+
+        if choice == 0:
+            print("You're already at the highest level.\n")
+            return False
+
+        self.state.current_town = towns[choice - 1]
+        self.ui.display_choice_confirmation("town", self.state.current_town.name)
+        return True
+
+    def _choose_neighborhood(self) -> bool:
+        """Choose a neighborhood within the current town. Returns True if chosen, False to go back."""
+        assert self.state.current_town is not None
+        neighborhoods = self.state.current_town.neighborhoods
+
+        print("Choose a neighborhood (or 0 to go back to town selection):\n")
+        self.ui.display_neighborhoods(neighborhoods)
+        choice = self.ui._get_valid_input("Enter your choice: ", 0, len(neighborhoods))
+
+        if choice == 0:
+            self.state.current_town = None
+            return False
+
+        self.state.current_neighborhood = neighborhoods[choice - 1]
+        self.ui.display_choice_confirmation("neighborhood", self.state.current_neighborhood.name)
 
         # Check for return narrative (have we been here before?)
         neighborhood_name = self.state.current_neighborhood.name
@@ -147,24 +192,46 @@ class Game:
             neighborhood_name, reputation
         )
         self.ui.display_neighborhood_return(return_narrative)
+        return True
 
-        # Choose location
-        self._choose_location()
-
-    def _choose_location(self) -> None:
-        """Choose a location within the current neighborhood."""
+    def _choose_street(self) -> bool:
+        """Choose a street within the current neighborhood. Returns True if chosen, False to go back."""
         assert self.state.current_neighborhood is not None
-        print("Choose your location:\n")
-        self.ui.display_locations(self.state.current_neighborhood.locations)
-        choice = self.ui._get_valid_input(
-            "Enter the number of your choice: ",
-            1,
-            len(self.state.current_neighborhood.locations),
-        )
-        self.state.chosen_location = self.state.current_neighborhood.locations[choice - 1]
-        self.ui.display_choice_confirmation(
-            "location", self.state.chosen_location.name
-        )
+        streets = self.state.current_neighborhood.streets
+
+        print("Choose a street (or 0 to go back to neighborhood selection):\n")
+        self.ui.display_streets(streets)
+        choice = self.ui._get_valid_input("Enter your choice: ", 0, len(streets))
+
+        if choice == 0:
+            self.state.current_neighborhood = None
+            return False
+
+        self.state.current_street = streets[choice - 1]
+        self.ui.display_choice_confirmation("street", self.state.current_street.name)
+        return True
+
+    def _choose_location(self) -> bool:
+        """Choose a location on the current street. Returns True if chosen, False to go back."""
+        assert self.state.current_street is not None
+        locations = self.state.current_street.locations
+
+        print("Choose a location (or 0 to go back to street selection):\n")
+        self.ui.display_locations(locations)
+        choice = self.ui._get_valid_input("Enter your choice: ", 0, len(locations))
+
+        if choice == 0:
+            self.state.current_street = None
+            return False
+
+        self.state.chosen_location = locations[choice - 1]
+        self.ui.display_choice_confirmation("location", self.state.chosen_location.name)
+        return True
+
+    # Legacy method for backward compatibility
+    def _choose_neighborhood_and_location(self) -> None:
+        """Let the player navigate the world hierarchy."""
+        self._navigate_world()
 
     def _main_loop(self) -> None:
         """Main gameplay loop for the day."""
@@ -253,6 +320,8 @@ class Game:
 
     def _handle_store(self) -> None:
         """Handle a store location."""
+        from .items import create_inventory_item
+
         assert self.state.chosen_location is not None
         location = self.state.chosen_location
 
@@ -270,8 +339,15 @@ class Game:
             item = location.inventory[choice - 1]
             if can_afford(self.state, item.price):
                 purchase_item(self.state, item.price)
-                item.effect(self.state)
-                self.ui.display_purchase_success(item.name)
+                if item.storable:
+                    # Add to inventory for later use
+                    inv_item = create_inventory_item(item)
+                    self.state.inventory.append(inv_item)
+                    self.ui.display_purchase_to_inventory(item.name)
+                else:
+                    # Apply effect immediately (e.g., Pocket Bible)
+                    item.effect(self.state)
+                    self.ui.display_purchase_success(item.name)
             else:
                 self.ui.display_cannot_afford()
 
@@ -373,15 +449,40 @@ class Game:
         if is_day_over(self.state):
             return
 
-        print("\nWhat would you like to do?")
-        print("1. Choose a new location in this neighborhood")
-        print("2. Go to a different neighborhood")
-        choice = self.ui._get_valid_input("Enter your choice: ", 1, 2)
+        while True:
+            print("\nWhat would you like to do?")
+            print("1. Choose another location on this street")
+            print("2. Go to a different street")
+            print("3. Go to a different neighborhood")
+            print("4. Go to a different town")
+            print("0. Go back (same as 4)")
+            choice = self.ui._get_valid_input("Enter your choice: ", 0, 4)
 
-        if choice == 1:
-            self._choose_location()
-        else:
-            self._choose_neighborhood_and_location()
+            if choice == 0 or choice == 4:
+                # Go all the way back to town selection
+                self.state.current_street = None
+                self.state.current_neighborhood = None
+                self.state.current_town = None
+                self._navigate_world()
+                break
+            elif choice == 3:
+                # Go back to neighborhood selection (stay in same town)
+                self.state.current_street = None
+                self.state.current_neighborhood = None
+                if self._choose_neighborhood():
+                    if self._choose_street():
+                        if self._choose_location():
+                            break
+            elif choice == 2:
+                # Go to different street (stay in same neighborhood)
+                self.state.current_street = None
+                if self._choose_street():
+                    if self._choose_location():
+                        break
+            elif choice == 1:
+                # Choose another location on current street
+                if self._choose_location():
+                    break
 
     def _run_conversation(self, npc: NPC, npc_id: int) -> None:
         """Run the full conversation system with an NPC."""

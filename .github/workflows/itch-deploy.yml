@@ -3,30 +3,34 @@ name: Deploy to itch.io
 on:
   release:
     types: [published]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy (e.g., v1.0.0)'
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Linux build
-        uses: actions/download-artifact@v4
-        with:
-          name: Preaching-linux-x64
-          path: linux
+      - name: Get release tag
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Download Windows build
-        uses: actions/download-artifact@v4
-        with:
-          name: Preaching-windows-x64.exe
-          path: windows
-
-      - name: Download macOS build
-        uses: actions/download-artifact@v4
-        with:
-          name: Preaching-macos-x64
-          path: macos
+      - name: Download release assets
+        run: |
+          mkdir -p release
+          cd release
+          gh release download ${{ steps.get_tag.outputs.tag }} --repo ${{ github.repository }}
+          ls -la
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install butler
         run: |
@@ -38,7 +42,8 @@ jobs:
       - name: Push to itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USERNAME: ${{ secrets.ITCH_USERNAME }}
         run: |
-          ./butler push linux ${{ secrets.ITCH_USERNAME }}/belen-preaching:linux
-          ./butler push windows ${{ secrets.ITCH_USERNAME }}/belen-preaching:windows
-          ./butler push macos ${{ secrets.ITCH_USERNAME }}/belen-preaching:macos
+          ./butler push release/Preaching-linux-x64 ${ITCH_USERNAME}/belen-preaching:linux
+          ./butler push release/Preaching.exe ${ITCH_USERNAME}/belen-preaching:windows
+          ./butler push release/Preaching-macos-x64 ${ITCH_USERNAME}/belen-preaching:mac

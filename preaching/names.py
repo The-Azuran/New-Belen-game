@@ -135,3 +135,47 @@ def generate_neighborhood_name() -> str:
         lambda: f"{random.choice(STREET_NAMES)} Gardens",
     ]
     return random.choice(patterns)()
+
+
+def generate_street_name() -> str:
+    """Generate a random street name."""
+    street = random.choice(STREET_NAMES)
+    suffix = random.choice(STREET_SUFFIXES)
+    return f"{street} {suffix}"
+
+
+# Town name components
+TOWN_PREFIXES = [
+    "New", "Old", "North", "South", "East", "West", "Upper", "Lower",
+    "Mount", "Lake", "River", "Pleasant", "Fair", "Green", "Spring",
+]
+
+TOWN_SUFFIXES = [
+    "ville", "town", "burg", "field", "dale", "wood", "ford", "port",
+    "view", "haven", "springs", "creek", "falls", "ridge", "grove",
+]
+
+
+def generate_town_name() -> str:
+    """Generate a random town name."""
+    patterns = [
+        lambda: f"{random.choice(TOWN_PREFIXES)}{random.choice(TOWN_SUFFIXES)}",
+        lambda: f"{random.choice(STREET_NAMES)}{random.choice(TOWN_SUFFIXES)}",
+        lambda: f"{random.choice(TOWN_PREFIXES)} {random.choice(STREET_NAMES)}",
+        lambda: f"{random.choice(LAST_NAMES)}{random.choice(TOWN_SUFFIXES)}",
+    ]
+    return random.choice(patterns)()
+
+
+# County name components
+COUNTY_SUFFIXES = ["County", "Parish"]
+
+
+def generate_county_name() -> str:
+    """Generate a random county name."""
+    patterns = [
+        lambda: f"{random.choice(STREET_NAMES)} {random.choice(COUNTY_SUFFIXES)}",
+        lambda: f"{random.choice(LAST_NAMES)} {random.choice(COUNTY_SUFFIXES)}",
+        lambda: f"{random.choice(TOWN_PREFIXES)}{random.choice(TOWN_SUFFIXES)} {random.choice(COUNTY_SUFFIXES)}",
+    ]
+    return random.choice(patterns)()

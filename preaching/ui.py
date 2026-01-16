@@ -6,7 +6,7 @@ import random
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .models import GameState, Location, Neighborhood, NPC
+    from .models import GameState, Location, Neighborhood, NPC, InventoryItem, Town, Street
     from .enums import Religion, Strategy
     from .items import Item, Pamphlet
     from .conversation import ConversationState, ConversationResult
@@ -35,6 +35,13 @@ LIBRARY_LORE = [
 class ConsoleUI:
     """Handles all console input/output for the game."""
 
+    def __init__(self) -> None:
+        self._game_state: "GameState | None" = None
+
+    def set_game_state(self, state: "GameState") -> None:
+        """Set the game state reference for status display."""
+        self._game_state = state
+
     def clear_screen(self) -> None:
         """Clear the console screen."""
         if os.name == 'nt':
@@ -51,6 +58,9 @@ class ConsoleUI:
         print("Welcome to Belen Torres Preaching The Truth\n")
         print("In this game, you play as a preacher for a chosen religion. Your goal is to win as many souls as you can by going door-to-door and preaching your faith. Your performance is scored based on the number of souls won.\n")
         print("Each day you will encounter various responses from people behind the doors, and your hunger will increase as you continue preaching. When your hunger reaches 100, the day ends and you must go home to rest.\n")
+        print("CONTROLS:")
+        print("  Press 'i' at any prompt to check your status")
+        print("  Press '0' to go back/leave the current area\n")
         print("Now, let's begin. Choose your religion...\n")
 
     def display_menu(self, title: str, options: list[str]) -> int:
@@ -71,15 +81,26 @@ class ConsoleUI:
         return self._get_valid_input("Enter the number of your choice: ", 0, len(options))
 
     def _get_valid_input(self, prompt: str, min_val: int, max_val: int) -> int:
-        """Get validated integer input from user within a range."""
+        """Get validated integer input from user within a range.
+
+        If game state is set, pressing 'i' will show the status menu.
+        """
         while True:
             try:
-                choice = int(input(prompt))
+                raw = input(prompt)
+                # Check for status shortcut
+                if raw.lower() == 'i' and self._game_state is not None:
+                    self.display_quick_status(self._game_state)
+                    continue
+                choice = int(raw)
                 if min_val <= choice <= max_val:
                     return choice
                 print(f"Invalid choice. Please enter a number between {min_val} and {max_val}.")
             except ValueError:
-                print("Invalid input. Please enter a number.")
+                if raw.lower() == 'i':
+                    print("(Status view not available yet)")
+                else:
+                    print("Invalid input. Please enter a number.")
 
     def prompt_yes_no(self, question: str) -> bool:
         """Ask a yes/no question and return True for yes."""
@@ -114,10 +135,23 @@ class ConsoleUI:
         """Confirm a player's choice."""
         print(f"You've chosen: {choice}\n")
 
+    def display_towns(self, towns: list["Town"]) -> None:
+        """Display town options with names."""
+        for i, town in enumerate(towns, start=1):
+            total_neighborhoods = len(town.neighborhoods)
+            print(f"{i}. {town.name} ({total_neighborhoods} neighborhoods)")
+
     def display_neighborhoods(self, neighborhoods: list[Neighborhood]) -> None:
         """Display neighborhood options with names."""
         for i, neighborhood in enumerate(neighborhoods, start=1):
-            print(f"{i}. {neighborhood.name} ({len(neighborhood.locations)} locations)")
+            total_streets = len(neighborhood.streets)
+            print(f"{i}. {neighborhood.name} ({total_streets} streets)")
+
+    def display_streets(self, streets: list["Street"]) -> None:
+        """Display street options with names."""
+        for i, street in enumerate(streets, start=1):
+            total_locations = len(street.locations)
+            print(f"{i}. {street.name} ({total_locations} locations)")
 
     def display_locations(self, locations: list[Location]) -> None:
         """Display location options with types and names."""
@@ -255,6 +289,10 @@ class ConsoleUI:
         """Display successful purchase."""
         print(f"You bought {item_name}!")
 
+    def display_purchase_to_inventory(self, item_name: str) -> None:
+        """Display successful purchase added to inventory."""
+        print(f"You bought {item_name} and put it in your bag. (Press 'i' to use)")
+
     def display_cannot_afford(self) -> None:
         """Display can't afford message."""
         print("You don't have enough money for that.")
@@ -328,6 +366,89 @@ class ConsoleUI:
         print("0. Cancel")
         return self._get_valid_input("Enter your choice: ", 0, len(npcs))
 
+    def display_quick_status(self, state: GameState) -> None:
+        """Display status and inventory menu (accessible via 'i' key)."""
+        while True:
+            print("\n" + "=" * 35)
+            print("     INVENTORY & STATUS")
+            print("=" * 35)
+            print(f"  Day: {DAYS[state.day_of_week]} | Hunger: {state.hunger}/100")
+            print(f"  Money: ${state.money} | Souls: {state.score}")
+            # Show location hierarchy
+            location_parts = []
+            if state.current_town:
+                location_parts.append(state.current_town.name)
+            if state.current_neighborhood:
+                location_parts.append(state.current_neighborhood.name)
+            if state.current_street:
+                location_parts.append(state.current_street.name)
+            if location_parts:
+                print(f"  Location: {' > '.join(location_parts)}")
+            if state.pamphlet_boost_remaining > 0:
+                print(f"  Active pamphlet: {state.pamphlet_boost_remaining} uses left")
+            if state.bible_bonus > 0:
+                print(f"  Bible bonus: +{int(state.bible_bonus * 100)}%")
+            if state.current_neighborhood:
+                rep_desc = state.reputation.get_reputation_description(state.current_neighborhood.name)
+                print(f"  Local reputation: {rep_desc}")
+            print("-" * 35)
+
+            # Show inventory
+            if not state.inventory:
+                print("  Your bag is empty.")
+            else:
+                # Group items by type
+                food_items = [i for i in state.inventory if i.item_type == "food"]
+                pamphlet_items = [i for i in state.inventory if i.item_type == "pamphlet"]
+
+                if food_items:
+                    print(f"  FOOD ({len(food_items)}):")
+                    for idx, item in enumerate(food_items, 1):
+                        print(f"    {idx}. {item.name} (-{item.hunger_restore} hunger)")
+
+                if pamphlet_items:
+                    offset = len(food_items)
+                    print(f"  PAMPHLETS ({len(pamphlet_items)}):")
+                    for idx, item in enumerate(pamphlet_items, offset + 1):
+                        print(f"    {idx}. {item.name}")
+
+            print("-" * 35)
+            print("  Enter number to use item, or 0 to close")
+            print("=" * 35)
+
+            if not state.inventory:
+                input("  Press Enter to close...")
+                break
+
+            try:
+                choice = input("  > ")
+                if choice == "0" or choice == "":
+                    break
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(state.inventory):
+                    # Use the item
+                    item = state.inventory[choice_num - 1]
+                    self._use_inventory_item(state, item)
+                    state.inventory.remove(item)
+                else:
+                    print("  Invalid choice.")
+            except ValueError:
+                if choice.lower() != 'i':  # Don't error on pressing i again
+                    print("  Invalid input.")
+
+    def _use_inventory_item(self, state: GameState, item: "InventoryItem") -> None:
+        """Use an inventory item."""
+        from .models import InventoryItem
+        if item.item_type == "food":
+            state.hunger = max(0, state.hunger - item.hunger_restore)
+            print(f"\n  You ate the {item.name}. Hunger reduced by {item.hunger_restore}!")
+            print(f"  Current hunger: {state.hunger}/100")
+        elif item.item_type == "pamphlet":
+            state.pamphlet_boost_remaining = 5
+            state.pamphlet_boost_amount = 0.10
+            state.active_pamphlet_tags = item.pamphlet_tags.copy()
+            print(f"\n  You prepared the {item.name}. +10% conversion for 5 encounters!")
+
     def display_dashboard(self, state: GameState) -> None:
         """Display the game dashboard."""
         self.clear_screen()
@@ -336,6 +457,16 @@ class ConsoleUI:
         print("=" * 40)
         print(f"Day: {DAYS[state.day_of_week]}")
         print(f"Weather: {state.weather.value}")
+        print("-" * 40)
+        # Show current location in hierarchy
+        if state.county:
+            print(f"County: {state.county.name}")
+        if state.current_town:
+            print(f"Town: {state.current_town.name}")
+        if state.current_neighborhood:
+            print(f"Neighborhood: {state.current_neighborhood.name}")
+        if state.current_street:
+            print(f"Street: {state.current_street.name}")
         print("-" * 40)
         print(f"Total souls won: {state.score}")
         print(f"Souls won today: {state.daily_score}")
