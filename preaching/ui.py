@@ -60,6 +60,7 @@ class ConsoleUI:
         print("=" * 50)
         print()
         print("       Dedicated to my sister, Monica Huertas")
+        print("            By Rowan Valis & Claude")
         print()
         print("-" * 50)
         print()
