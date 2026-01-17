@@ -489,13 +489,21 @@ class WorldGenerator {
             personality: randomChoice(PERSONALITIES),
             mood: randomChoice(MOODS),
             converted: false,
-            resistant: Math.random() < 0.3
+            resistant: Math.random() < randomInt(20, 40) / 100 // 20-40% chance
         };
     }
 
     static generateLocation(type) {
         const npcs = [];
-        const npcCount = type === "house" ? randomInt(1, 4) : 1;
+        let npcCount;
+        if (type === "house") {
+            npcCount = randomInt(1, 5);
+        } else if (type === "store") {
+            npcCount = randomInt(1, 3);
+        } else {
+            npcCount = randomInt(1, 4); // church
+        }
+
         for (let i = 0; i < npcCount; i++) {
             npcs.push(this.generateNPC());
         }
@@ -504,9 +512,9 @@ class WorldGenerator {
         if (type === "house") {
             name = `${randomInt(100, 9999)} ${generateStreetName()}`;
         } else if (type === "store") {
-            name = randomChoice(["Quick Stop", "Corner Mart", "Save-A-Lot", "Mini Mart", "7-Eleven"]);
+            name = randomChoice(["Quick Stop", "Corner Mart", "Save-A-Lot", "Mini Mart", "7-Eleven", "Dollar General", "Bodega", "Gas Station"]);
         } else if (type === "church") {
-            name = `${randomChoice(["First", "New", "Grace", "Faith"])} ${randomChoice(["Baptist", "Methodist", "Community"])} Church`;
+            name = `${randomChoice(["First", "New", "Grace", "Faith", "Mount", "Holy", "Saint"])} ${randomChoice(["Baptist", "Methodist", "Community", "Pentecostal", "Catholic", "Lutheran"])} Church`;
         }
 
         return { type, name, npcs };
@@ -514,12 +522,12 @@ class WorldGenerator {
 
     static generateStreet() {
         const locations = [];
-        const count = randomInt(3, 5);
+        const count = randomInt(2, 6);
         for (let i = 0; i < count; i++) {
             const roll = Math.random();
             let type = "house";
-            if (roll > 0.9) type = "church";
-            else if (roll > 0.8) type = "store";
+            if (roll > 0.92) type = "church";
+            else if (roll > 0.82) type = "store";
             locations.push(this.generateLocation(type));
         }
         return { name: generateStreetName(), locations };
@@ -531,23 +539,23 @@ class WorldGenerator {
         for (let i = 0; i < count; i++) {
             streets.push(this.generateStreet());
         }
-        const suffixes = ["Heights", "Park", "Gardens", "District", "Village"];
+        const suffixes = ["Heights", "Park", "Gardens", "District", "Village", "Estates", "Commons", "Grove"];
         return { name: `${randomChoice(STREET_NAMES)} ${randomChoice(suffixes)}`, streets };
     }
 
     static generateTown() {
         const neighborhoods = [];
-        const count = randomInt(2, 3);
+        const count = randomInt(2, 4);
         for (let i = 0; i < count; i++) {
             neighborhoods.push(this.generateNeighborhood());
         }
-        const suffixes = ["ville", "town", "burg", "field", "springs"];
+        const suffixes = ["ville", "town", "burg", "field", "springs", "dale", "wood", "port"];
         return { name: `${randomChoice(STREET_NAMES)}${randomChoice(suffixes)}`, neighborhoods };
     }
 
     static generateCounty() {
         const towns = [];
-        const count = randomInt(2, 4);
+        const count = randomInt(2, 5);
         for (let i = 0; i < count; i++) {
             towns.push(this.generateTown());
         }
