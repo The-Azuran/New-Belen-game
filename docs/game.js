@@ -547,7 +547,8 @@ class WorldGenerator {
 
     static generateCounty() {
         const towns = [];
-        for (let i = 0; i < 3; i++) {
+        const count = randomInt(2, 4);
+        for (let i = 0; i < count; i++) {
             towns.push(this.generateTown());
         }
         return { name: `${randomChoice(LAST_NAMES)} County`, towns };
@@ -1076,7 +1077,7 @@ class Game {
         if (this.state.hunger >= 100) {
             this.ui.addChoice("End Day", () => this.endDay());
         } else {
-            this.ui.addChoice("Continue", () => this.showNextAction());
+            this.ui.addChoice("Continue", () => this.handleLocation());
         }
     }
 
