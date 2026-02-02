@@ -33,14 +33,15 @@ from .conversation import ConversationEngine, ConversationState
 from .memory import MemoryManager
 from .narrative import NarrativeEngine, NarrativeContext
 from .preachers import PREACHERS, create_custom_preacher
+from .save_load import save_game, load_game, list_saves
 
 
 class Game:
     """Main game orchestrator - ties together UI, state, and logic."""
 
-    def __init__(self, ui: ConsoleUI) -> None:
+    def __init__(self, ui: ConsoleUI, seed: int | None = None) -> None:
         self.ui = ui
-        self.state = GameState.create_new_game()
+        self.state = GameState.create_new_game(seed=seed)
         self.ui.set_game_state(self.state)  # Enable status view via 'i' key
         self.events = EventManager()
         self.conversation = ConversationEngine()
@@ -50,15 +51,77 @@ class Game:
     def run(self) -> None:
         """Run the main game loop."""
         self.ui.display_welcome()
+
+        # Check for saved games and offer load option
+        saves = list_saves()
+        if saves:
+            choice = self.ui.display_main_menu(has_saves=True)
+            if choice == "load":
+                slot = self.ui.display_save_slots(saves)
+                if slot is not None and self._load_game(slot):
+                    # Successfully loaded, resume from saved day
+                    self._resume_game()
+                    return
+
+        # New game flow
+        self.ui.display_world_seed(self.state.world_seed)
         self._choose_preacher()
         self._choose_religion()
+        self._play_game()
 
+    def _play_game(self) -> None:
+        """Play through all game days."""
         for _ in range(GAME_DAYS):
             self._run_day()
             self.state.reset_for_new_day()
             self.state.advance_day()
 
         self._end_game()
+
+    def _resume_game(self) -> None:
+        """Resume game from loaded state."""
+        # Calculate remaining days
+        days_remaining = GAME_DAYS - self.state.day_of_week
+        if days_remaining <= 0:
+            # Already at end
+            self._end_game()
+            return
+
+        # Resume from current day
+        for _ in range(days_remaining):
+            self._run_day()
+            self.state.reset_for_new_day()
+            self.state.advance_day()
+
+        self._end_game()
+
+    def _load_game(self, slot: int) -> bool:
+        """Load a game from the given slot. Returns True if successful."""
+        result = load_game(slot)
+        if result is None:
+            print("Failed to load game.")
+            return False
+
+        self.state, self.memory = result
+        self.ui.set_game_state(self.state)
+        self.narrative = NarrativeEngine(self.memory)
+
+        self.ui.display_load_success(
+            self.state.preacher_name,
+            self.state.day_of_week,
+            self.state.score
+        )
+        return True
+
+    def _save_game(self) -> None:
+        """Prompt player to save and handle save."""
+        slot = self.ui.display_save_prompt()
+        if slot is not None:
+            save_game(self.state, self.memory, slot)
+            self.ui.display_save_success(
+                self.state.preacher_name,
+                self.state.day_of_week
+            )
 
     def _choose_preacher(self) -> None:
         """Let the player choose their preacher character."""
@@ -170,6 +233,9 @@ class Game:
         summary = self.memory.end_day(ended_hungry)
         journal_entry = self.narrative.generate_journal_entry(summary)
         self.ui.display_journal_entry(journal_entry)
+
+        # Offer to save progress
+        self._save_game()
 
     def _navigate_world(self) -> None:
         """Full world navigation: County → Town → Neighborhood → Street → Location."""

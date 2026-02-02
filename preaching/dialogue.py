@@ -97,6 +97,50 @@ PERSONALITIES: dict[str, dict] = {
             "I've seen too much hypocrisy.",
         ],
     },
+    "grieving": {
+        "name": "Grieving",
+        "description": "Processing loss",
+        "weak_to": ["empathy", "community", "personal"],
+        "strong_against": ["pushy", "hellfire", "quick"],
+        "opening_responses": [
+            "I'm not really in the mood for visitors...",
+            "It's been a hard week.",
+            "I suppose you can come in. Nothing else matters anyway.",
+        ],
+    },
+    "parent": {
+        "name": "Busy Parent",
+        "description": "Overwhelmed with kids",
+        "weak_to": ["quick", "family", "community"],
+        "strong_against": ["long_winded", "pushy"],
+        "opening_responses": [
+            "Kids, get back here! Sorry, what?",
+            "I've got about two minutes before someone needs a snack.",
+            "Uh huh, uh huh... TYLER PUT THAT DOWN!",
+        ],
+    },
+    "former_believer": {
+        "name": "Former Believer",
+        "description": "Left the faith years ago",
+        "weak_to": ["personal", "humble", "no_pressure"],
+        "strong_against": ["hellfire", "institutional", "pushy"],
+        "opening_responses": [
+            "I used to be just like you, you know.",
+            "Been there, done that, got the t-shirt.",
+            "Look, I know the whole playbook. Save your breath.",
+        ],
+    },
+    "elderly_religious": {
+        "name": "Devout Elder",
+        "description": "Deep in their own tradition",
+        "weak_to": ["respectful", "common_ground"],
+        "strong_against": ["hellfire", "pushy", "exclusive"],
+        "opening_responses": [
+            "Oh dear, another one? Come in, I'll make tea.",
+            "I've had my faith for 60 years. What could you tell me?",
+            "You remind me of myself, once upon a time.",
+        ],
+    },
 }
 
 # =============================================================================
@@ -132,6 +176,18 @@ MOODS: dict[str, dict] = {
         "interest_bonus": 10,
         "patience": 4,
         "visual_hint": "They look intrigued.",
+    },
+    "sleepy": {
+        "name": "Sleepy",
+        "interest_bonus": -5,
+        "patience": 2,
+        "visual_hint": "They look like they just woke up from a nap.",
+    },
+    "cheerful": {
+        "name": "Cheerful",
+        "interest_bonus": 8,
+        "patience": 5,
+        "visual_hint": "They seem to be in a great mood today.",
     },
 }
 
@@ -174,6 +230,24 @@ OPENERS: list[dict] = [
         "text": "Have you ever wondered about the meaning of life?",
         "tags": ["spiritual", "personal", "philosophical"],
         "interest_base": 3,
+    },
+    {
+        "id": "community_event",
+        "text": "We're having a potluck this Saturday. Would you be interested?",
+        "tags": ["community", "friendly", "no_pressure"],
+        "interest_base": 7,
+    },
+    {
+        "id": "testimony_hook",
+        "text": "Can I tell you about the strangest thing that ever happened to me?",
+        "tags": ["personal", "authentic", "spiritual"],
+        "interest_base": 6,
+    },
+    {
+        "id": "philosophical",
+        "text": "Do you ever wonder what happens after we die?",
+        "tags": ["spiritual", "philosophical", "personal"],
+        "interest_base": 4,
     },
 ]
 
@@ -241,6 +315,24 @@ OBJECTIONS: list[dict] = [
         "good_responses": ["share_story", "explain_faith", "invite"],
         "personality_weight": {"seeker": 3, "lonely": 2},
         "is_positive": True,
+    },
+    {
+        "id": "lost_someone",
+        "text": "I prayed when my mother was dying. Nobody answered.",
+        "good_responses": ["empathy", "listen", "grieve_with"],
+        "personality_weight": {"grieving": 3, "cynic": 2},
+    },
+    {
+        "id": "kids_busy",
+        "text": "Look, I've got three kids screaming in there...",
+        "good_responses": ["respect_time", "quick_point", "parenting_solidarity"],
+        "personality_weight": {"parent": 3, "busy": 2},
+    },
+    {
+        "id": "tried_before",
+        "text": "I was a believer for twenty years. I know how this ends.",
+        "good_responses": ["listen", "personal_story", "former_believer_relate"],
+        "personality_weight": {"former_believer": 3, "cynic": 1},
     },
 ]
 
@@ -422,6 +514,28 @@ RESPONSES: list[dict] = [
         "text": "You'll regret this when the time comes.",
         "tags": ["hellfire", "pushy", "threatening"],
         "interest_change": -15,
+    },
+
+    # New responses for new personalities
+    {
+        "id": "grieve_with",
+        "text": "I'm so sorry. Sometimes there are no words. Would you like to talk?",
+        "tags": ["empathy", "personal", "humble"],
+        "interest_change": 12,
+    },
+    {
+        "id": "parenting_solidarity",
+        "text": "I totally get it. Here's a flyer - no pressure, whenever you have time.",
+        "tags": ["respectful", "quick", "family"],
+        "interest_change": 6,
+        "ends_conversation": True,
+        "polite_exit": True,
+    },
+    {
+        "id": "former_believer_relate",
+        "text": "What made you leave, if you don't mind me asking?",
+        "tags": ["empathy", "curious_ask", "personal"],
+        "interest_change": 8,
     },
 ]
 

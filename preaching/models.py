@@ -29,7 +29,11 @@ def _random_personality() -> str:
 
 def _random_mood() -> str:
     """Pick a random starting mood (weighted towards neutral)."""
-    return random.choice(["neutral", "neutral", "receptive", "grumpy", "distracted", "curious"])
+    return random.choice([
+        "neutral", "neutral", "neutral",  # Higher weight for neutral
+        "receptive", "grumpy", "distracted", "curious",
+        "sleepy", "cheerful"  # New moods
+    ])
 
 
 @dataclass
@@ -285,10 +289,24 @@ class GameState:
     preacher_conversion_bonus: float = 0.0
     preacher_hunger_rate: float = 1.0
     preacher_personality_bonus: dict[str, float] = field(default_factory=dict)
+    # World generation seed
+    world_seed: int = 0
 
     @classmethod
-    def create_new_game(cls) -> GameState:
-        """Create a fresh game state with generated world."""
+    def create_new_game(cls, seed: Optional[int] = None) -> "GameState":
+        """Create a fresh game state with generated world.
+
+        Args:
+            seed: Optional seed for reproducible world generation.
+                  If None, a random seed is generated.
+        """
+        # Generate or use provided seed
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
+
+        # Seed the RNG for deterministic world generation
+        random.seed(seed)
+
         # Create the world hierarchy: 1 county, 3 towns, 2-3 neighborhoods each
         county = County.create(num_towns=3)
 
@@ -297,10 +315,16 @@ class GameState:
         for town in county.towns:
             all_neighborhoods.extend(town.neighborhoods)
 
-        return cls(
+        state = cls(
             county=county,
             neighborhoods=all_neighborhoods,
+            world_seed=seed,
         )
+
+        # Reset RNG to avoid affecting other random elements during gameplay
+        random.seed()
+
+        return state
 
     def reset_for_new_day(self) -> None:
         """Reset daily counters."""

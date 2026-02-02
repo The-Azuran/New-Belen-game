@@ -75,6 +75,106 @@ class ConsoleUI:
         print("  Press '0' to go back/leave the current area\n")
         print("Now, let's begin by choosing your preacher...\n")
 
+    def display_world_seed(self, seed: int) -> None:
+        """Display the world generation seed for sharing."""
+        print(f"World Seed: {seed}")
+        print("(Share this seed with friends to play the same world!)\n")
+
+    def display_main_menu(self, has_saves: bool) -> str:
+        """Display main menu with new game / load options.
+
+        Returns 'new' for new game, 'load' to load a save.
+        """
+        print("=" * 40)
+        print("          MAIN MENU")
+        print("=" * 40)
+        print()
+        print("1. New Game")
+        if has_saves:
+            print("2. Load Game")
+            choice = self._get_valid_input("Enter your choice: ", 1, 2)
+            return "load" if choice == 2 else "new"
+        else:
+            input("Press Enter to start a new game...")
+            return "new"
+
+    def display_save_slots(self, saves: list[dict]) -> int | None:
+        """Display save slots for loading. Returns slot number or None to cancel."""
+        print("\n" + "=" * 40)
+        print("          SAVED GAMES")
+        print("=" * 40)
+        print()
+
+        if not saves:
+            print("No saved games found.")
+            input("Press Enter to continue...")
+            return None
+
+        for save in saves:
+            meta = save["metadata"]
+            print(f"Slot {save['slot']}: {meta.get('preacher_name', 'Unknown')}")
+            print(f"         Day {meta.get('day', '?')} | Score: {meta.get('score', '?')}")
+            timestamp = meta.get('timestamp', '')
+            if timestamp:
+                # Format timestamp nicely
+                try:
+                    dt = timestamp.split('T')[0]
+                    print(f"         Saved: {dt}")
+                except (IndexError, AttributeError):
+                    pass
+            print()
+
+        print("0. Cancel (back to main menu)")
+        print()
+
+        max_slot = max(s["slot"] for s in saves)
+        valid_slots = {s["slot"] for s in saves}
+
+        while True:
+            try:
+                raw = input("Enter slot number to load: ")
+                choice = int(raw)
+                if choice == 0:
+                    return None
+                if choice in valid_slots:
+                    return choice
+                print(f"Invalid slot. Please choose from available saves or 0 to cancel.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+
+    def display_save_prompt(self) -> int | None:
+        """Prompt player to save. Returns slot number or None to skip."""
+        print("\n" + "-" * 30)
+        response = input("Save your progress? (y/n) ")
+        if response.lower() != 'y':
+            return None
+
+        print("\nChoose a save slot (0-2):")
+        print("  (Warning: existing saves will be overwritten)")
+        print()
+
+        while True:
+            try:
+                raw = input("Enter slot number (or 'c' to cancel): ")
+                if raw.lower() == 'c':
+                    return None
+                slot = int(raw)
+                if 0 <= slot <= 2:
+                    return slot
+                print("Please enter a slot number between 0 and 2.")
+            except ValueError:
+                print("Invalid input. Please enter a number or 'c' to cancel.")
+
+    def display_save_success(self, preacher: str, day: int) -> None:
+        """Confirm a successful save."""
+        print(f"\nGame saved! ({preacher}, Day {day})")
+
+    def display_load_success(self, preacher: str, day: int, score: int) -> None:
+        """Confirm a successful load."""
+        print(f"\nLoaded: {preacher}")
+        print(f"Day {day} | Score: {score}")
+        print()
+
     def display_menu(self, title: str, options: list[str]) -> int:
         """Display a numbered menu and get user choice (1-indexed)."""
         if title:

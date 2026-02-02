@@ -111,6 +111,50 @@ PREACHERS: list[Preacher] = [
         personality_bonus={"lonely": 0.20, "cynic": 0.15, "skeptic": 0.05},  # Knows exactly what people need to hear
         special="Such a blessing to everyone she meets. Truly. Everyone says so.",
     ),
+    Preacher(
+        id="maria",
+        name="Sister Maria Guadalupe",
+        description="A gentle nun who sees the divine in everyone",
+        conversion_bonus=0.0,
+        reputation_bonus=10,  # People trust nuns
+        money_bonus=-5,  # Vow of poverty
+        hunger_rate=0.9,  # Used to fasting
+        personality_bonus={"grieving": 0.25, "lonely": 0.15, "hostile": -0.10},
+        special="Exceptional with those in pain, but struggles with open hostility",
+    ),
+    Preacher(
+        id="derek",
+        name="Pastor Derek Thompson",
+        description="A former addict turned youth pastor with street smarts",
+        conversion_bonus=0.05,
+        reputation_bonus=-5,  # Rough past
+        money_bonus=0,
+        hunger_rate=1.0,
+        personality_bonus={"cynic": 0.20, "hostile": 0.10, "intellectual": -0.15},
+        special="Connects with cynics and the hardened, but scholars see through him",
+    ),
+    Preacher(
+        id="grandma_ruth",
+        name="Grandma Ruth",
+        description="An 85-year-old who's seen it all and won't take no for an answer",
+        conversion_bonus=0.08,
+        reputation_bonus=15,  # Who can say no to grandma?
+        money_bonus=25,  # Social Security
+        hunger_rate=1.3,  # Gets tired easily
+        personality_bonus={"parent": 0.20, "elderly_religious": 0.15, "busy": -0.10},
+        special="Older folks and parents love her, but busy people find her slow",
+    ),
+    Preacher(
+        id="carl",
+        name="Brother Carl",
+        description="A soft-spoken introvert who preaches through kindness, not words",
+        conversion_bonus=-0.05,  # Quiet approach has lower base rate
+        reputation_bonus=5,
+        money_bonus=10,
+        hunger_rate=0.85,
+        personality_bonus={"intellectual": 0.15, "seeker": 0.10, "hostile": 0.15},  # Non-threatening
+        special="Disarms hostile people with gentleness, but quiet approach takes longer",
+    ),
 ]
 
 
