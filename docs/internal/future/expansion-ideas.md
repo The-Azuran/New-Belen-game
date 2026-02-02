@@ -307,4 +307,103 @@ Potential features and enhancements for future development.
 
 ---
 
+---
+
+## World Fleshing Research (2026-02-02)
+
+Brainstormed ideas for making the world more immersive:
+
+### Location Depth
+
+**Houses:**
+- Yard descriptions (toys = kids, garden = elderly, cars = working class)
+- House condition hints at occupant mood/receptivity
+- Seasonal decorations (Christmas lights, Halloween)
+- "No Soliciting" signs (warning before knocking)
+
+**Stores:**
+- Clerk personalities affecting prices/availability
+- Regulars you see repeatedly
+- Bulletin boards with community info
+- Store-specific events (sales, new stock)
+
+**Churches:**
+- Pastors with names and personalities
+- Congregation events you can attend
+- Potential allies or rivals
+- Different service styles affecting approach
+
+**Libraries:**
+- Book club meetings
+- Community events
+- Librarian relationships
+- Historical archives about the town
+
+### NPC Relationships
+
+**Family connections:**
+- NPCs in same house are related
+- Converting one family member affects others
+- "My sister told me about you..."
+
+**Neighborhood gossip:**
+- Word spreads about you (good or bad)
+- NPCs reference specific past encounters
+- "I heard you helped Mrs. Garcia..."
+
+**NPC schedules:**
+- Same person at home morning, at store afternoon
+- Catch someone at work vs at home = different mood
+
+### World Events
+
+**Daily happenings:**
+- Local news (parade, accident, school event)
+- Weather events (storm coming, heat wave)
+- Community gatherings affecting NPC availability
+
+**Week-long arcs:**
+- Town festival building up
+- Local controversy (new development, school board)
+- Competing revival from another church
+
+### Physical Atmosphere
+
+**Street descriptions:**
+- Tree-lined vs industrial vs suburban sprawl
+- Condition (well-maintained, run-down, gentrifying)
+- Traffic, noise, activity level
+
+**Time of day flavor:**
+- Morning: coffee smell, newspapers, joggers
+- Afternoon: kids playing, lawn mowers
+- Evening: dinner smells, TV glow, porch lights
+
+**1990s period details:**
+- Specific cars in driveways (minivans, Saturns)
+- Yard sale signs
+- Basketball hoops, trampolines
+- Political yard signs
+
+### Interconnected Systems
+
+**Reputation ripple effects:**
+- Convert someone important = bonus in whole neighborhood
+- Upset someone connected = multiple doors close
+- Churches talk to each other about you
+
+**Economic layer:**
+- Rich vs poor neighborhoods (different NPC concerns)
+- Donation amounts vary by area
+- Store prices vary by location
+
+### Implementation Priority Suggestions
+
+1. **Location descriptions/atmosphere** - Mostly narrative, low code effort
+2. **NPC relationships/gossip** - Mechanical + narrative, medium effort
+3. **Time-of-day system** - Significant mechanical change, high effort
+4. **World events/arcs** - Content + mechanics, high effort
+
+---
+
 *See also: [Architecture Overview](../architecture/overview.md) | [Game Balance](../design/game-balance.md)*
