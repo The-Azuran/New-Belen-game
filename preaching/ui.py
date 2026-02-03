@@ -645,6 +645,40 @@ class ConsoleUI:
         """Display NPC's objection."""
         print(f"They say: \"{objection_text}\"\n")
 
+    def display_response_choices_with_press(
+        self, responses: list[dict], press_option: dict | None
+    ) -> tuple[int, bool]:
+        """Display response choices with optional press option.
+
+        Returns: (choice_index, is_press)
+        If press is chosen, returns (0, True).
+        Otherwise returns (1-based response index, False).
+        """
+        print("How do you respond?\n")
+
+        offset = 0
+        if press_option:
+            print(f"1. [Press] \"{press_option['probe_text']}\"")
+            offset = 1
+
+        for i, response in enumerate(responses, start=1 + offset):
+            print(f"{i}. \"{response['text']}\"")
+        print()
+
+        total_options = len(responses) + offset
+        choice = self._get_valid_input("Choose your response: ", 1, total_options)
+
+        if press_option and choice == 1:
+            return (0, True)  # Press chosen
+        return (choice - offset, False)  # Response chosen (1-based index)
+
+    def display_press_result(self, reveal_text: str, interest_bonus: int) -> None:
+        """Display the result of pressing for more information."""
+        print(f"\nThey pause, then: \"{reveal_text}\"\n")
+        if interest_bonus > 0:
+            print(f"  [You understand them better now. +{interest_bonus} insight]")
+        print("  [New response options available.]\n")
+
     def display_response_choices(self, responses: list[dict]) -> int:
         """Display response choices and get selection."""
         print("How do you respond?\n")

@@ -53,6 +53,9 @@ class ConversationState:
     opener_used: Optional[str] = None
     active_pamphlet_tags: list[str] = field(default_factory=list)
     preacher_personality_bonus: dict[str, float] = field(default_factory=dict)
+    # Press mechanic state
+    current_objection_cause: Optional[str] = None  # ID of discovered underlying cause
+    pressed_this_turn: bool = False  # Whether player pressed this turn
 
     @classmethod
     def start(
@@ -149,11 +152,28 @@ class ConversationEngine:
         )
 
     def get_available_responses(self, state: ConversationState, objection_id: str) -> list[dict]:
-        """Get available responses to an objection."""
+        """Get available responses to an objection.
+
+        If a cause was discovered via pressing, prioritizes unlocked responses.
+        """
         objection = next((o for o in OBJECTIONS if o["id"] == objection_id), None)
         if not objection:
             return RESPONSES[:4]  # Default fallback
 
+        # If cause was discovered, prioritize unlocked responses
+        if state.current_objection_cause:
+            unlocked = self.get_unlocked_responses(state, objection_id)
+            if unlocked:
+                responses = list(unlocked)
+                # Fill remaining slots with other responses
+                other_ids = {r["id"] for r in unlocked}
+                others = [r for r in RESPONSES if r["id"] not in other_ids]
+                random.shuffle(others)
+                responses.extend(others[:max(0, 4 - len(responses))])
+                random.shuffle(responses)
+                return responses[:4]
+
+        # Normal behavior: good responses plus variety
         good_response_ids = objection.get("good_responses", [])
 
         # Get the good responses plus some random others
@@ -198,6 +218,77 @@ class ConversationEngine:
             return chosen
 
         return OBJECTIONS[0]
+
+    def get_press_option(self, state: ConversationState, objection_id: str) -> Optional[dict]:
+        """Get the press/probe option for current objection, if available.
+
+        Returns a cause dict with probe_text, or None if no press available.
+        """
+        # Can't press if already pressed this turn or cause already discovered
+        if state.pressed_this_turn or state.current_objection_cause:
+            return None
+
+        objection = next((o for o in OBJECTIONS if o["id"] == objection_id), None)
+        if not objection or "causes" not in objection:
+            return None
+
+        # Weight causes by personality
+        causes = objection["causes"]
+        weighted = []
+        for cause in causes:
+            weight = cause.get("weight", {}).get(state.personality, 1)
+            weighted.extend([cause] * weight)
+
+        return random.choice(weighted) if weighted else None
+
+    def apply_press(
+        self, state: ConversationState, objection_id: str
+    ) -> tuple[str, list[str], int]:
+        """Apply press action to probe deeper into the objection.
+
+        Returns: (reveal_text, unlocked_response_ids, interest_bonus)
+        Press costs 1 patience (risk/reward tradeoff).
+        """
+        press_option = self.get_press_option(state, objection_id)
+        if not press_option:
+            return ("They don't elaborate.", [], 0)
+
+        # Mark as pressed and store discovered cause
+        state.pressed_this_turn = True
+        state.current_objection_cause = press_option["id"]
+
+        # Apply interest bonus for discovering the real issue
+        interest_bonus = press_option.get("interest_bonus", 0)
+        state.interest += interest_bonus
+
+        # Press costs patience (risk/reward)
+        state.patience -= 1
+
+        return (
+            press_option["reveal_text"],
+            press_option.get("unlocks", []),
+            interest_bonus,
+        )
+
+    def get_unlocked_responses(self, state: ConversationState, objection_id: str) -> list[dict]:
+        """Get responses unlocked by discovering the underlying cause."""
+        if not state.current_objection_cause:
+            return []
+
+        objection = next((o for o in OBJECTIONS if o["id"] == objection_id), None)
+        if not objection or "causes" not in objection:
+            return []
+
+        # Find the cause we discovered
+        cause = next(
+            (c for c in objection["causes"] if c["id"] == state.current_objection_cause),
+            None
+        )
+        if not cause:
+            return []
+
+        unlocked_ids = cause.get("unlocks", [])
+        return [r for r in RESPONSES if r["id"] in unlocked_ids]
 
     def apply_response(self, state: ConversationState, response_id: str, current_objection_id: str) -> ConversationResult:
         """Apply player's response and determine outcome."""

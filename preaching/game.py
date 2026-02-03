@@ -664,13 +664,38 @@ class Game:
             self.ui.clear_screen()
             self.ui.display_conversation_header(npc.name, conv_state.interest)
 
+            # Reset press state for this turn
+            conv_state.pressed_this_turn = False
+            conv_state.current_objection_cause = None
+
             # Get next objection from NPC
             current_objection = self.conversation.get_next_objection(conv_state)
             self.ui.display_objection(current_objection["text"])
 
+            # Check if press option is available
+            press_option = self.conversation.get_press_option(conv_state, current_objection["id"])
+
             # Get available responses
             responses = self.conversation.get_available_responses(conv_state, current_objection["id"])
-            response_choice = self.ui.display_response_choices(responses)
+
+            # Show choices with press option if available
+            response_choice, is_press = self.ui.display_response_choices_with_press(
+                responses, press_option
+            )
+
+            # Handle press action
+            if is_press and press_option:
+                reveal_text, unlocks, interest_bonus = self.conversation.apply_press(
+                    conv_state, current_objection["id"]
+                )
+                self.ui.display_press_result(reveal_text, interest_bonus)
+
+                # Get new response options after pressing
+                responses = self.conversation.get_available_responses(
+                    conv_state, current_objection["id"]
+                )
+                response_choice = self.ui.display_response_choices(responses)
+
             response = responses[response_choice - 1]
 
             # Track response tags
