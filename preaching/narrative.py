@@ -37,15 +37,32 @@ class NarrativeEngine:
         """Get Belen's internal thought when approaching someone."""
         thoughts = []
 
-        # Check for previous encounters with this NPC
+        # Check for previous encounters with this NPC (relationship depth)
         history = self.memory.get_npc_history(npc.name)
         if history:
-            prev = history[-1]
             from .memory import EventType
-            if prev.event_type == EventType.REJECTION:
+            polite_exits = [m for m in history if m.event_type == EventType.POLITE_EXIT]
+            rejections = [m for m in history if m.event_type == EventType.REJECTION]
+
+            # Multiple polite conversations build warmth
+            if len(polite_exits) >= 3:
+                thoughts.append(f"You've had several good conversations with {npc.name}. They're warming up.")
+            elif len(polite_exits) == 2:
+                thoughts.append(f"{npc.name} has been polite twice now. You're building something here.")
+            elif len(polite_exits) == 1:
+                thoughts.append(f"{npc.name} was polite last time. Maybe they're warming up.")
+
+            # Resistant NPCs with persistence
+            if npc.resistant and len(history) >= 2:
+                thoughts.append(f"{npc.name} is stubborn, but you've been patient. Maybe today.")
+            elif npc.resistant and len(history) == 1:
+                thoughts.append(f"{npc.name} resisted before, but you sense they might listen now.")
+
+            # Multiple rejections
+            if len(rejections) >= 2:
+                thoughts.append(f"You've spoken to {npc.name} {len(rejections)} times. It never goes well.")
+            elif len(rejections) == 1 and len(polite_exits) == 0:
                 thoughts.append(f"You've spoken to {npc.name} before. It didn't go well.")
-            elif prev.event_type == EventType.POLITE_EXIT:
-                thoughts.append(f"{npc.name} again. Maybe this time will be different.")
 
         # Rejection streak thoughts
         if context.rejection_streak >= 3:

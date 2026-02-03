@@ -56,6 +56,11 @@ class ConversationState:
     # Press mechanic state
     current_objection_cause: Optional[str] = None  # ID of discovered underlying cause
     pressed_this_turn: bool = False  # Whether player pressed this turn
+    # Relationship depth state
+    visit_count: int = 0  # How many times we've met this NPC before
+    polite_exit_count: int = 0  # Warmth from previous polite exits
+    npc_resistant: bool = False  # Whether NPC is resistant (for threshold calc)
+    warmth_bonus: int = 0  # Bonus applied from relationship warmth
 
     @classmethod
     def start(
@@ -64,6 +69,8 @@ class ConversationState:
         reputation_bonus: int = 0,
         pamphlet_tags: list[str] | None = None,
         preacher_personality_bonus: dict[str, float] | None = None,
+        visit_count: int = 0,
+        polite_exit_count: int = 0,
     ) -> ConversationState:
         """Start a new conversation with an NPC."""
         mood_data = MOODS.get(npc.mood, MOODS["neutral"])
@@ -75,6 +82,10 @@ class ConversationState:
         if npc.personality in personality_bonus:
             # Convert percentage to interest points (e.g., 0.10 = +5 interest)
             starting_interest += int(personality_bonus[npc.personality] * 50)
+
+        # Relationship warmth bonus from previous polite exits
+        warmth_bonus = min(polite_exit_count * 3, 15)  # Max +15 from warmth
+        starting_interest += warmth_bonus
 
         # Resistant NPCs are harder but not impossible
         if npc.resistant:
@@ -89,6 +100,10 @@ class ConversationState:
             patience=patience,
             active_pamphlet_tags=pamphlet_tags or [],
             preacher_personality_bonus=personality_bonus,
+            visit_count=visit_count,
+            polite_exit_count=polite_exit_count,
+            npc_resistant=npc.resistant,
+            warmth_bonus=warmth_bonus,
         )
 
 
@@ -136,6 +151,10 @@ class ConversationEngine:
 
         pamphlet_bonus, pamphlet_mods = self._calculate_pamphlet_bonus_detailed(state)
         modifiers.extend(pamphlet_mods)
+
+        # Show relationship warmth bonus (already applied in start())
+        if state.warmth_bonus > 0:
+            modifiers.append(("warmth (familiar)", state.warmth_bonus))
 
         interest_change = base_interest + tag_bonus + pamphlet_bonus
         state.interest += interest_change
@@ -338,8 +357,9 @@ class ConversationEngine:
                 modifiers=modifiers,
             )
 
-        # Check for conversion or rejection
-        if state.interest >= CONVERSION_THRESHOLD:
+        # Check for conversion or rejection (using relationship-adjusted threshold)
+        conversion_threshold = self.get_adjusted_threshold(state)
+        if state.interest >= conversion_threshold:
             return ConversationResult(
                 npc_response=random.choice(CONVERSION_LINES),
                 interest_change=total_change,
@@ -436,6 +456,28 @@ class ConversationEngine:
                 modifiers.append((f"pamphlet: {tag}", 3))
 
         return bonus, modifiers
+
+    def get_adjusted_threshold(self, state: ConversationState) -> int:
+        """Calculate conversion threshold based on relationship depth.
+
+        Resistant NPCs are impossible on first visit, hard on subsequent.
+        Normal NPCs get easier with repeat visits.
+        """
+        base_threshold = CONVERSION_THRESHOLD  # 50
+
+        # Resistant NPCs: impossible on first visit, hard on subsequent
+        if state.npc_resistant:
+            if state.visit_count < 1:
+                return 999  # Impossible on first visit
+            else:
+                # Hard but possible: 70 - (visits-1)*3, min 55
+                return max(55, 70 - (state.visit_count - 1) * 3)
+
+        # Normal NPCs: gets easier with repeat visits
+        # -3 per previous visit, max -15
+        visit_bonus = min(state.visit_count * 3, 15)
+
+        return max(35, base_threshold - visit_bonus)
 
     def get_interest_description(self, interest: int) -> str:
         """Get a text description of current interest level."""

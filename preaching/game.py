@@ -614,12 +614,18 @@ class Game:
         original_mood = npc.mood
         npc.mood = self.state.reputation.get_starting_mood(neighborhood_name)
 
-        # Start conversation
+        # Calculate relationship depth with this NPC
+        visit_count = self._get_npc_visit_count(npc.name)
+        polite_exit_count = self._get_npc_polite_exit_count(npc.name)
+
+        # Start conversation with relationship data
         conv_state = ConversationState.start(
             npc,
             reputation_bonus=rep_bonus,
             pamphlet_tags=self.state.active_pamphlet_tags,
             preacher_personality_bonus=self.state.preacher_personality_bonus,
+            visit_count=visit_count,
+            polite_exit_count=polite_exit_count,
         )
 
         # Clear screen for fresh conversation
@@ -789,6 +795,17 @@ class Game:
         self.ui.display_internal_thought(thought)
 
         self.events.trigger_bad_response(self.state, self.ui)
+
+    def _get_npc_visit_count(self, npc_name: str) -> int:
+        """Count total previous encounters with this NPC."""
+        history = self.memory.get_npc_history(npc_name)
+        return len(history)
+
+    def _get_npc_polite_exit_count(self, npc_name: str) -> int:
+        """Count polite exits with this NPC (relationship warmth indicator)."""
+        from .memory import EventType
+        history = self.memory.get_npc_history(npc_name)
+        return sum(1 for m in history if m.event_type == EventType.POLITE_EXIT)
 
     def _end_game(self) -> None:
         """Handle end of game."""
