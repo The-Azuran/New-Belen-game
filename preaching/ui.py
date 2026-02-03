@@ -660,6 +660,20 @@ class ConsoleUI:
         bar = "[" + "=" * bar_pos + " " * (20 - bar_pos) + "]"
         print(f"Interest: {bar} ({description})")
 
+    def display_modifiers(
+        self, modifiers: list[tuple[str, int]], interest_change: int
+    ) -> None:
+        """Display what affected the interest change. Only shows for significant changes."""
+        # Only show breakdown for significant changes
+        if abs(interest_change) <= 3 or not modifiers:
+            return
+
+        for name, value in modifiers:
+            if value > 0:
+                print(f"    +{value} {name}")
+            elif value < 0:
+                print(f"    {value} {name}")
+
     def display_conversion_result(self, converted: bool, rejected: bool, polite_exit: bool) -> None:
         """Display the final result of a conversation."""
         print()

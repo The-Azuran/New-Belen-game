@@ -37,6 +37,7 @@ class ConversationResult:
     converted: bool = False
     rejected: bool = False
     polite_exit: bool = False
+    modifiers: list[tuple[str, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -116,11 +117,24 @@ class ConversationEngine:
         state.opener_used = opener_id
         state.turn = 1
 
-        # Calculate interest change based on personality match
-        interest_change = opener.get("interest_base", 0)
-        interest_change += self._calculate_tag_bonus(state.personality, opener.get("tags", []))
-        interest_change += self._calculate_pamphlet_bonus(state)
+        # Track all modifiers
+        modifiers: list[tuple[str, int]] = []
 
+        # Base interest from opener
+        base_interest = opener.get("interest_base", 0)
+        if base_interest != 0:
+            modifiers.append(("opener", base_interest))
+
+        # Calculate interest change based on personality match
+        tag_bonus, tag_mods = self._calculate_tag_bonus_detailed(
+            state.personality, opener.get("tags", [])
+        )
+        modifiers.extend(tag_mods)
+
+        pamphlet_bonus, pamphlet_mods = self._calculate_pamphlet_bonus_detailed(state)
+        modifiers.extend(pamphlet_mods)
+
+        interest_change = base_interest + tag_bonus + pamphlet_bonus
         state.interest += interest_change
 
         # Get NPC response
@@ -131,6 +145,7 @@ class ConversationEngine:
             interest_change=interest_change,
             new_interest=state.interest,
             is_positive=interest_change > 0,
+            modifiers=modifiers,
         )
 
     def get_available_responses(self, state: ConversationState, objection_id: str) -> list[dict]:
@@ -192,18 +207,30 @@ class ConversationEngine:
         state.turn += 1
         state.patience -= 1
 
-        # Calculate interest change
+        # Track all modifiers
+        modifiers: list[tuple[str, int]] = []
+
+        # Base interest change from response
         base_change = response.get("interest_change", 0)
+        if base_change != 0:
+            modifiers.append(("response", base_change))
 
         # Bonus/penalty for matching personality
-        tag_bonus = self._calculate_tag_bonus(state.personality, response.get("tags", []))
-        pamphlet_bonus = self._calculate_pamphlet_bonus(state)
+        tag_bonus, tag_mods = self._calculate_tag_bonus_detailed(
+            state.personality, response.get("tags", [])
+        )
+        modifiers.extend(tag_mods)
+
+        pamphlet_bonus, pamphlet_mods = self._calculate_pamphlet_bonus_detailed(state)
+        modifiers.extend(pamphlet_mods)
 
         # Extra bonus if this is a "good response" for the objection
+        objection_bonus = 0
         if objection and response_id in objection.get("good_responses", []):
-            base_change += 5
+            objection_bonus = 5
+            modifiers.append(("matched objection", objection_bonus))
 
-        total_change = base_change + tag_bonus + pamphlet_bonus
+        total_change = base_change + tag_bonus + pamphlet_bonus + objection_bonus
         state.interest += total_change
 
         # Determine NPC response text
@@ -217,6 +244,7 @@ class ConversationEngine:
                 is_positive=is_positive,
                 conversation_ended=True,
                 polite_exit=response.get("polite_exit", False),
+                modifiers=modifiers,
             )
 
         # Check for conversion or rejection
@@ -228,6 +256,7 @@ class ConversationEngine:
                 is_positive=True,
                 conversation_ended=True,
                 converted=True,
+                modifiers=modifiers,
             )
 
         if state.interest <= REJECTION_THRESHOLD:
@@ -238,6 +267,7 @@ class ConversationEngine:
                 is_positive=False,
                 conversation_ended=True,
                 rejected=True,
+                modifiers=modifiers,
             )
 
         if state.patience <= 0:
@@ -247,6 +277,7 @@ class ConversationEngine:
                 new_interest=state.interest,
                 is_positive=is_positive,
                 conversation_ended=True,
+                modifiers=modifiers,
             )
 
         # Continue conversation
@@ -260,38 +291,60 @@ class ConversationEngine:
             interest_change=total_change,
             new_interest=state.interest,
             is_positive=is_positive,
+            modifiers=modifiers,
         )
 
     def _calculate_tag_bonus(self, personality: str, tags: list[str]) -> int:
         """Calculate interest bonus/penalty based on personality vs tags."""
+        total, _ = self._calculate_tag_bonus_detailed(personality, tags)
+        return total
+
+    def _calculate_tag_bonus_detailed(
+        self, personality: str, tags: list[str]
+    ) -> tuple[int, list[tuple[str, int]]]:
+        """Calculate tag bonus and return detailed modifiers."""
         personality_data = self.get_personality_data(personality)
         weak_to = personality_data.get("weak_to", [])
         strong_against = personality_data.get("strong_against", [])
 
         bonus = 0
+        modifiers = []
 
         for tag in tags:
             if tag in weak_to:
-                bonus += INTEREST_PER_GOOD_MATCH // 2
+                amount = INTEREST_PER_GOOD_MATCH // 2
+                bonus += amount
+                modifiers.append((f"{tag} (effective)", amount))
             if tag in strong_against or "all" in strong_against:
-                bonus += INTEREST_PER_BAD_MATCH // 2
+                amount = INTEREST_PER_BAD_MATCH // 2
+                bonus += amount
+                modifiers.append((f"{tag} (backfired)", amount))
 
-        return bonus
+        return bonus, modifiers
 
     def _calculate_pamphlet_bonus(self, state: ConversationState) -> int:
         """Calculate bonus from active pamphlet matching personality."""
+        total, _ = self._calculate_pamphlet_bonus_detailed(state)
+        return total
+
+    def _calculate_pamphlet_bonus_detailed(
+        self, state: ConversationState
+    ) -> tuple[int, list[tuple[str, int]]]:
+        """Calculate pamphlet bonus and return detailed modifiers."""
         if not state.active_pamphlet_tags:
-            return 0
+            return 0, []
 
         personality_data = self.get_personality_data(state.personality)
         weak_to = personality_data.get("weak_to", [])
 
         bonus = 0
+        modifiers = []
         for tag in state.active_pamphlet_tags:
             if tag in weak_to:
                 bonus += 3
+                modifiers.append((f"pamphlet: {tag}", 3))
 
-        return bonus
+        return bonus, modifiers
 
     def get_interest_description(self, interest: int) -> str:
         """Get a text description of current interest level."""

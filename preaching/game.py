@@ -646,6 +646,7 @@ class Game:
         result = self.conversation.apply_opener(conv_state, opener["id"])
         interest_desc = self.conversation.get_interest_description(conv_state.interest)
         self.ui.display_interest_bar(conv_state.interest, interest_desc)
+        self.ui.display_modifiers(result.modifiers, result.interest_change)
 
         # Main conversation loop
         current_objection = None
@@ -676,6 +677,7 @@ class Game:
             self.ui.display_npc_response(result.npc_response, result.is_positive)
             interest_desc = self.conversation.get_interest_description(result.new_interest)
             self.ui.display_interest_bar(result.new_interest, interest_desc)
+            self.ui.display_modifiers(result.modifiers, result.interest_change)
 
         # Handle conversation end
         self.ui.display_conversion_result(result.converted, result.rejected, result.polite_exit)
