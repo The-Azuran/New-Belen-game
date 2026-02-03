@@ -722,6 +722,11 @@ class ConsoleUI:
         if thought:
             print(f"\n  * {thought} *\n")
 
+    def display_preacher_insight(self, insight: str) -> None:
+        """Display preacher's character-specific observation about an NPC."""
+        if insight:
+            print(f"\n  ~ {insight} ~\n")
+
     def display_narrative_moment(self, text: str) -> None:
         """Display a narrative/atmospheric moment."""
         if text:

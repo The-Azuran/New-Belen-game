@@ -629,6 +629,15 @@ class Game:
         mood_hint = self.ui.display_npc_mood_hint(conv_state.mood)
         self.ui.display_conversation_start(npc.name, mood_hint)
 
+        # Show preacher's character-specific insight about this NPC
+        insight = self.narrative.get_preacher_insight(
+            self.state.preacher_id,
+            self.state.preacher_personality_bonus,
+            npc.personality,
+        )
+        if insight:
+            self.ui.display_preacher_insight(insight)
+
         # Show opening response
         opening_response = self.conversation.get_opening_response(conv_state)
         self.ui.display_npc_response(opening_response, conv_state.interest >= 0)

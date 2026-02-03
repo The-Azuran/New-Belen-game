@@ -158,6 +158,201 @@ PREACHERS: list[Preacher] = [
 ]
 
 
+# =============================================================================
+# PREACHER INSIGHTS - Internal voice observations during conversations
+# Based on Disco Elysium's "skills as voices" pattern
+# =============================================================================
+PREACHER_INSIGHTS: dict[str, dict[str, dict[str, list[str]]]] = {
+    "belen": {
+        "positive": {
+            "lonely": [
+                "Their eyes have that emptiness. You know it well.",
+                "This one needs community more than doctrine.",
+                "You see yourself in them, before you found your path.",
+            ],
+            "seeker": [
+                "A searching soul. Your testimony was made for moments like this.",
+                "They're hungry for something real. Give them the truth.",
+                "This is why you do this. They're ready to hear it.",
+            ],
+        },
+        "negative": {
+            "skeptic": [
+                "They want proof. You have faith, not footnotes.",
+                "This one argues with their head, not their heart.",
+                "Be patient. Your story sounds crazy even to you sometimes.",
+            ],
+        },
+    },
+    "scott": {
+        "positive": {
+            "intellectual": [
+                "Ah, a thinker. Finally, a real conversation.",
+                "They've read the counterarguments. Good. So have you.",
+                "Engage the mind first. The heart follows.",
+            ],
+            "skeptic": [
+                "Their doubt is structured. You can work with that.",
+                "Skepticism is just faith that hasn't found its foundation yet.",
+                "They need reasons, not feelings. Give them reasons.",
+            ],
+        },
+        "negative": {},
+    },
+    "joyce": {
+        "positive": {
+            "cynic": [
+                "They've been burned before. Show them you're different.",
+                "Cynicism is just hope wearing armor.",
+                "Break through the wall. There's someone hurting behind it.",
+            ],
+            "hostile": [
+                "Their anger comes from somewhere. Find the wound.",
+                "Don't match their energy. Transform it.",
+            ],
+        },
+        "negative": {},
+    },
+    "billy": {
+        "positive": {
+            "seeker": [
+                "They came to the door hoping for something. Give it to them.",
+                "The harvest is ready. You just need to gather it.",
+                "Your father would have known exactly what to say here.",
+            ],
+        },
+        "negative": {},
+    },
+    "joel": {
+        "positive": {
+            "lonely": [
+                "They need to feel special. You can give them that.",
+                "Promise them the life they deserve. God wants them blessed.",
+                "Loneliness is just untapped potential waiting for purpose.",
+            ],
+        },
+        "negative": {},
+    },
+    "marcus": {
+        "positive": {
+            "hostile": [
+                "You've faced worse on the streets. Stand your ground.",
+                "Their fire reminds you of yourself. Channel it.",
+                "Don't back down. They'll respect you for it.",
+            ],
+        },
+        "negative": {
+            "skeptic": [
+                "They want debate. You have testimony, not talking points.",
+                "Sometimes the streets taught you more than any book.",
+                "Logic won't reach this one. Move on.",
+            ],
+        },
+    },
+    "olga": {
+        "positive": {
+            "lonely": [
+                "Oh, pobrecito. They just need someone to listen.",
+                "You know exactly what they need to hear, mi amor.",
+                "A little kindness goes a long way with this one.",
+            ],
+            "cynic": [
+                "They think they're so clever. Bless their heart.",
+                "Let them think they're winning. Then close the deal.",
+                "Cynics are just disappointed optimists, cariño.",
+            ],
+            "skeptic": [
+                "Even doubters have their price. Find it.",
+            ],
+        },
+        "negative": {},
+    },
+    "maria": {
+        "positive": {
+            "grieving": [
+                "The Lord weeps with them. So will you.",
+                "Don't preach. Just be present.",
+                "They don't need words. They need witness.",
+            ],
+            "lonely": [
+                "Every soul deserves to feel seen.",
+                "Christ was lonely too. Share that with them.",
+            ],
+        },
+        "negative": {
+            "hostile": [
+                "Turn the other cheek, but... this one tests you.",
+                "Their anger frightens you. Pray for courage.",
+                "Perhaps this door is not yours to open.",
+            ],
+        },
+    },
+    "derek": {
+        "positive": {
+            "cynic": [
+                "Takes one to know one. You were harder than this.",
+                "They think they're tough. Show them real survival.",
+                "Cut through the act. Ask what really happened.",
+            ],
+            "hostile": [
+                "You've stared down worse in the mirror.",
+                "Their bark is worse than their bite. Probably.",
+            ],
+        },
+        "negative": {
+            "intellectual": [
+                "They're using big words to feel superior. Don't play.",
+                "Book smarts ain't street smarts.",
+                "You'll never out-argue them. Don't try.",
+            ],
+        },
+    },
+    "grandma_ruth": {
+        "positive": {
+            "parent": [
+                "Oh, the poor dear looks exhausted. You remember those days.",
+                "Children are a blessing. Remind them of that.",
+                "They need a moment of peace. Give it to them.",
+            ],
+            "elderly_religious": [
+                "Another old soul! You'll get along just fine.",
+                "Respect their journey. They've walked longer than most.",
+                "Share stories. That's how our generation connects.",
+            ],
+        },
+        "negative": {
+            "busy": [
+                "Everyone's so rushed these days. No time for what matters.",
+                "They'll regret not stopping. But you can't force them.",
+            ],
+        },
+    },
+    "carl": {
+        "positive": {
+            "intellectual": [
+                "Listen more than you speak. They'll appreciate that.",
+                "Sometimes silence says more than sermons.",
+                "Ask questions. Let them find their own answers.",
+            ],
+            "seeker": [
+                "They're almost there. A gentle nudge is enough.",
+                "Don't overwhelm them. Just open the door a crack.",
+            ],
+            "hostile": [
+                "Softness disarms better than force.",
+                "They expect a fight. Surprise them with peace.",
+                "Your quiet is your strength here.",
+            ],
+        },
+        "negative": {},
+    },
+    "custom": {
+        "positive": {},
+        "negative": {},
+    },
+}
+
+
 def get_preacher_by_id(preacher_id: str) -> Preacher | None:
     """Get a preacher by ID."""
     return next((p for p in PREACHERS if p.id == preacher_id), None)

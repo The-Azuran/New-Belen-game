@@ -115,6 +115,42 @@ class NarrativeEngine:
             return random.choice(thoughts)
         return None
 
+    def get_preacher_insight(
+        self,
+        preacher_id: str,
+        personality_bonus: dict[str, float],
+        npc_personality: str,
+    ) -> Optional[str]:
+        """Get preacher-specific observation based on their affinity with NPC personality.
+
+        This creates a "skills as voices" effect where each preacher notices
+        different things about the people they meet.
+        """
+        from .preachers import PREACHER_INSIGHTS
+
+        # Get insights for this preacher
+        preacher_insights = PREACHER_INSIGHTS.get(preacher_id, {})
+        if not preacher_insights:
+            return None
+
+        # Check if preacher has affinity (positive or negative) for this personality
+        if npc_personality not in personality_bonus:
+            return None
+
+        bonus = personality_bonus[npc_personality]
+        insights = []
+
+        if bonus > 0:
+            # Positive affinity - preacher notices opportunity
+            insights = preacher_insights.get("positive", {}).get(npc_personality, [])
+        elif bonus < 0:
+            # Negative affinity - preacher notices difficulty
+            insights = preacher_insights.get("negative", {}).get(npc_personality, [])
+
+        if insights:
+            return random.choice(insights)
+        return None
+
     def get_post_conversion_thought(self, context: NarrativeContext, npc: "NPC") -> Optional[str]:
         """Get Belen's thought after a successful conversion."""
         thoughts = [
