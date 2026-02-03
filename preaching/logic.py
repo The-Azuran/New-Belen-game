@@ -11,6 +11,7 @@ from .config import (
     CONVERSION_RATES,
     FAILED_ATTEMPT_PENALTY,
     MAX_CONVERSION_RATE,
+    RESISTANT_CONVERSION_MULTIPLIER,
     HUNGER_HARSH_WEATHER,
     HUNGER_NICE_WEATHER,
     FOOD_HUNGER_REDUCTION,
@@ -57,10 +58,12 @@ def calculate_conversion_rate(state: GameState, npc: NPC) -> float:
 
 def attempt_conversion(state: GameState, npc: NPC) -> bool:
     """Attempt to convert an NPC. Returns True if successful."""
-    if npc.resistant:
-        return False
-
     conversion_rate = calculate_conversion_rate(state, npc)
+
+    # Resistant NPCs are very hard to convert but not impossible
+    if npc.resistant:
+        conversion_rate *= RESISTANT_CONVERSION_MULTIPLIER
+
     success = random.random() < conversion_rate
 
     # Use up pamphlet charge after attempt

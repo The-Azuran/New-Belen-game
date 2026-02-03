@@ -23,6 +23,22 @@ from .reputation import ReputationManager
 SAVE_VERSION = "1.0"
 
 
+def _validate_personality(personality: str) -> str:
+    """Validate personality is known, default to skeptic if unknown."""
+    from .dialogue import PERSONALITIES
+    if personality not in PERSONALITIES:
+        return "skeptic"
+    return personality
+
+
+def _validate_mood(mood: str) -> str:
+    """Validate mood is known, default to neutral if unknown."""
+    from .dialogue import MOODS
+    if mood not in MOODS:
+        return "neutral"
+    return mood
+
+
 def get_save_directory() -> Path:
     """Get the save directory, creating it if needed."""
     save_dir = Path.home() / ".preaching_the_truth" / "saves"
@@ -240,8 +256,8 @@ def _deserialize_npc(data: dict) -> NPC:
     """Deserialize an NPC from a dict."""
     return NPC(
         name=data["name"],
-        personality=data["personality"],
-        mood=data["mood"],
+        personality=_validate_personality(data["personality"]),
+        mood=_validate_mood(data["mood"]),
         converted=data["converted"],
         failed_attempts=data["failed_attempts"],
         resistant=data["resistant"],
@@ -387,6 +403,11 @@ def _restore_location_references(state: GameState, indices: dict) -> None:
 
 def deserialize_game_state(data: dict) -> tuple[GameState, MemoryManager]:
     """Deserialize a game state from a JSON-compatible dict."""
+    # Validate save version
+    version = data.get("metadata", {}).get("version", "1.0")
+    if version != SAVE_VERSION:
+        raise ValueError(f"Incompatible save version: {version} (expected {SAVE_VERSION})")
+
     state_data = data["state"]
 
     # Rebuild the world hierarchy

@@ -72,9 +72,9 @@ class ConversationState:
             # Convert percentage to interest points (e.g., 0.10 = +5 interest)
             starting_interest += int(personality_bonus[npc.personality] * 50)
 
-        # Resistant NPCs start with a severe interest penalty
+        # Resistant NPCs are harder but not impossible
         if npc.resistant:
-            starting_interest -= 25
+            starting_interest -= 20
             patience = max(2, patience - 1)  # Less patient too
 
         return cls(

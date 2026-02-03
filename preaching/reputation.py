@@ -3,6 +3,7 @@ Reputation system - tracks how neighborhoods view the player.
 """
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -68,19 +69,15 @@ class ReputationManager:
             return "receptive"
         elif rep >= REPUTATION_FRIENDLY:
             # 70% receptive, 30% neutral
-            import random
             return random.choice(["receptive", "receptive", "neutral", "curious"])
         elif rep >= REPUTATION_NEUTRAL:
             # Standard distribution
-            import random
             return random.choice(["neutral", "neutral", "receptive", "grumpy", "curious"])
         elif rep >= REPUTATION_SKEPTICAL:
             # Leaning negative
-            import random
             return random.choice(["neutral", "grumpy", "grumpy", "distracted"])
         else:
             # Hostile territory
-            import random
             return random.choice(["grumpy", "grumpy", "distracted"])
 
     def will_open_door(self, neighborhood_name: str) -> bool:
@@ -91,11 +88,9 @@ class ReputationManager:
             return True
         elif rep >= REPUTATION_HOSTILE:
             # 80% chance they'll open
-            import random
             return random.random() < 0.8
         else:
             # Very hostile - 50% chance
-            import random
             return random.random() < 0.5
 
     def get_reputation_bonus(self, neighborhood_name: str) -> int:

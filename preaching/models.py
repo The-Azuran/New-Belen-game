@@ -84,7 +84,7 @@ class Location:
         if affiliation is None:
             choices = [Religion.EVANGELIST, Religion.JEHOVAHS_WITNESS,
                        Religion.MORMON, Religion.CUSTOM, None]
-            # Very rare chance of Satanic church (hidden mechanic)
+            # Not all churches are what they seem...
             if random.random() < 0.01:
                 affiliation = Religion.SATANIC
             else:

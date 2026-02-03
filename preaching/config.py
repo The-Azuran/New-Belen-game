@@ -10,6 +10,7 @@ FOOD_HUNGER_REDUCTION = 20
 # Conversion mechanics
 FAILED_ATTEMPT_PENALTY = 0.1
 MAX_CONVERSION_RATE = 0.95
+RESISTANT_CONVERSION_MULTIPLIER = 0.15  # Resistant NPCs are very hard but not impossible
 
 # Event probabilities
 FOOD_DONATION_CHANCE = 0.2
@@ -20,12 +21,13 @@ FOOD_OR_BIBLE_SPLIT = 0.5
 SATANIC_ALLY_BONUS = 0.15
 
 # Base conversion rates for each religion
+# Some paths are easier to walk than others...
 CONVERSION_RATES: dict[Religion, float] = {
     Religion.EVANGELIST: 0.3,
     Religion.JEHOVAHS_WITNESS: 0.2,
     Religion.MORMON: 0.25,
     Religion.CUSTOM: 0.15,
-    Religion.SATANIC: 0.5,
+    Religion.SATANIC: 0.5,  # For the curious
 }
 
 # Religions shown to the player (Satanic is hidden)
@@ -49,7 +51,7 @@ DAYS: list[str] = [
 
 # Game duration
 GAME_DAYS = 7
-SATANIC_VICTORY_THRESHOLD = 10
+SATANIC_VICTORY_THRESHOLD = 10  # A different kind of victory awaits the persistent
 
 # Economy
 STARTING_MONEY = 10

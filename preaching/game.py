@@ -733,7 +733,10 @@ class Game:
     def _handle_rejection(self, neighborhood_name: str, npc: NPC,
                           was_aggressive: bool = False) -> None:
         """Handle when NPC rejects player."""
-        self.state.reputation.on_rejection(neighborhood_name)
+        if was_aggressive:
+            self.state.reputation.on_aggressive_failure(neighborhood_name)
+        else:
+            self.state.reputation.on_rejection(neighborhood_name)
 
         # Record in memory
         self.memory.record_rejection(
@@ -764,7 +767,7 @@ class Game:
             self._become_supernatural()
 
     def _become_supernatural(self) -> None:
-        """Handle the supernatural ending."""
+        """For those who walked a different path..."""
         choice = self.ui.prompt_vampire_or_werewolf()
         if choice == 'v':
             self.ui.display_vampire_ending()
