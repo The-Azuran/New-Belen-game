@@ -18,6 +18,9 @@ PERSONALITIES: dict[str, dict] = {
             "What do you want?",
             "I'm listening... for now.",
             "This better be good.",
+            "Let me guess. You want to save my soul.",
+            "I've debunked three of you this month already.",
+            "Alright, let's hear your pitch.",
         ],
     },
     "seeker": {
@@ -29,6 +32,9 @@ PERSONALITIES: dict[str, dict] = {
             "Oh, interesting! Tell me more.",
             "I've been thinking about these things lately...",
             "Come in, come in!",
+            "You know, I was just reading about this.",
+            "Perfect timing. I've had questions.",
+            "I've been feeling... drawn to something. I don't know what.",
         ],
     },
     "lonely": {
@@ -40,6 +46,9 @@ PERSONALITIES: dict[str, dict] = {
             "Oh! A visitor! How nice!",
             "I don't get many visitors...",
             "Would you like some coffee?",
+            "Please, come in. It's been so quiet.",
+            "My cat and I were just settling in. Join us?",
+            "It's nice to have someone to talk to.",
         ],
     },
     "busy": {
@@ -51,6 +60,9 @@ PERSONALITIES: dict[str, dict] = {
             "I only have a minute.",
             "Make it quick.",
             "I'm in the middle of something.",
+            "The roast is in the oven. Talk fast.",
+            "I've got a call in five minutes.",
+            "Can you give me the short version?",
         ],
     },
     "hostile": {
@@ -62,6 +74,9 @@ PERSONALITIES: dict[str, dict] = {
             "Oh great, another one.",
             "Not interested.",
             "You people again?",
+            "I have a sign that says 'No Solicitors' for a reason.",
+            "Whatever you're selling, I'm not buying.",
+            "Don't you have somewhere else to be?",
         ],
     },
     "devout_other": {
@@ -73,6 +88,9 @@ PERSONALITIES: dict[str, dict] = {
             "I already have my faith, thank you.",
             "I respect your beliefs, but I have my own.",
             "My family has been [faith] for generations.",
+            "I'm quite content with my spiritual path.",
+            "We probably worship the same God, you know.",
+            "I'm sure you mean well, but I'm settled in my beliefs.",
         ],
     },
     "intellectual": {
@@ -84,6 +102,9 @@ PERSONALITIES: dict[str, dict] = {
             "Ah, a theological discussion? Interesting.",
             "I've read quite a bit on this topic.",
             "Let's hear your argument.",
+            "Have you read Hitchens? Dawkins?",
+            "I hope you've done your homework.",
+            "Finally, someone I can have a real conversation with.",
         ],
     },
     "cynic": {
@@ -95,6 +116,9 @@ PERSONALITIES: dict[str, dict] = {
             "What's the catch?",
             "Churches just want your money.",
             "I've seen too much hypocrisy.",
+            "Let me guess - you need donations.",
+            "I trust organized religion about as far as I can throw it.",
+            "What's your angle here?",
         ],
     },
     "grieving": {
@@ -106,6 +130,9 @@ PERSONALITIES: dict[str, dict] = {
             "I'm not really in the mood for visitors...",
             "It's been a hard week.",
             "I suppose you can come in. Nothing else matters anyway.",
+            "Sorry, I'm... I'm not myself today.",
+            "You'll have to forgive me. Things have been difficult.",
+            "I don't know why I answered the door.",
         ],
     },
     "parent": {
@@ -117,6 +144,9 @@ PERSONALITIES: dict[str, dict] = {
             "Kids, get back here! Sorry, what?",
             "I've got about two minutes before someone needs a snack.",
             "Uh huh, uh huh... TYLER PUT THAT DOWN!",
+            "Hold on - NO RUNNING WITH SCISSORS!",
+            "You have thirty seconds. The baby's napping.",
+            "If this is quick, I'm listening. If not, try next decade.",
         ],
     },
     "former_believer": {
@@ -128,6 +158,9 @@ PERSONALITIES: dict[str, dict] = {
             "I used to be just like you, you know.",
             "Been there, done that, got the t-shirt.",
             "Look, I know the whole playbook. Save your breath.",
+            "I gave twenty years to the church. That's enough.",
+            "You can't tell me anything I don't already know.",
+            "I've read every apologetics book. None of it holds up.",
         ],
     },
     "elderly_religious": {
@@ -139,6 +172,9 @@ PERSONALITIES: dict[str, dict] = {
             "Oh dear, another one? Come in, I'll make tea.",
             "I've had my faith for 60 years. What could you tell me?",
             "You remind me of myself, once upon a time.",
+            "My pastor wouldn't approve of me talking to you, but...",
+            "I've seen missionaries come and go. What makes you different?",
+            "At my age, I'm set in my ways. But I do enjoy the company.",
         ],
     },
 }
@@ -333,6 +369,115 @@ OBJECTIONS: list[dict] = [
         "text": "I was a believer for twenty years. I know how this ends.",
         "good_responses": ["listen", "personal_story", "former_believer_relate"],
         "personality_weight": {"former_believer": 3, "cynic": 1},
+    },
+    # --- Intellectual/Philosophical objections ---
+    {
+        "id": "theodicy",
+        "text": "If God is good, why do bad things happen to good people?",
+        "good_responses": ["empathy", "humble", "listen", "mystery_acknowledge"],
+        "personality_weight": {"intellectual": 3, "grieving": 2, "skeptic": 2},
+    },
+    {
+        "id": "many_religions",
+        "text": "Which God? There are thousands of religions. Why is yours right?",
+        "good_responses": ["respect_beliefs", "humble", "personal_story", "common_ground"],
+        "personality_weight": {"intellectual": 3, "skeptic": 2, "devout_other": 1},
+    },
+    {
+        "id": "coping_mechanism",
+        "text": "Religion is just a coping mechanism. A crutch for the weak.",
+        "good_responses": ["agree_imperfect", "humble", "logical_appeal", "authentic"],
+        "personality_weight": {"intellectual": 2, "skeptic": 3, "cynic": 2},
+    },
+    {
+        "id": "contradictions",
+        "text": "I've read the Bible. It contradicts itself constantly.",
+        "good_responses": ["evidence_based", "humble", "curious_ask", "listen"],
+        "personality_weight": {"intellectual": 3, "skeptic": 2, "former_believer": 2},
+    },
+    {
+        "id": "philosophical",
+        "text": "I studied philosophy. The logical arguments for God just don't hold up.",
+        "good_responses": ["logical_appeal", "evidence_based", "humble", "respect_view"],
+        "personality_weight": {"intellectual": 3, "skeptic": 2},
+    },
+    # --- Personal/Emotional objections ---
+    {
+        "id": "spouse_left",
+        "text": "My spouse just left me. I can't think about anything else right now.",
+        "good_responses": ["empathy", "listen", "grieve_with", "respect_time"],
+        "personality_weight": {"grieving": 3, "busy": 1},
+    },
+    {
+        "id": "unanswered_prayers",
+        "text": "I prayed every day for years. Nothing ever changed.",
+        "good_responses": ["empathy", "listen", "humble", "personal_story"],
+        "personality_weight": {"former_believer": 3, "grieving": 2, "cynic": 2},
+    },
+    {
+        "id": "forced_as_child",
+        "text": "My parents forced religion on me. I'm done with all of it.",
+        "good_responses": ["empathy", "different_approach", "no_pressure_offer", "listen"],
+        "personality_weight": {"former_believer": 3, "hostile": 2, "cynic": 1},
+    },
+    {
+        "id": "trauma",
+        "text": "Something happened to me in a church. I'd rather not talk about it.",
+        "good_responses": ["empathy", "respect_choice", "listen", "different_approach"],
+        "personality_weight": {"hostile": 2, "former_believer": 2, "grieving": 2},
+    },
+    # --- Practical/Cynical objections ---
+    {
+        "id": "work_sundays",
+        "text": "I work Sundays. Church just isn't practical for me.",
+        "good_responses": ["community_free", "quick_point", "flexible_offer", "respect_time"],
+        "personality_weight": {"busy": 3, "cynic": 1},
+    },
+    {
+        "id": "happy_as_is",
+        "text": "I'm happy the way I am. Why would I change?",
+        "good_responses": ["respect_view", "curious_ask", "humble", "no_pressure_offer"],
+        "personality_weight": {"skeptic": 2, "hostile": 1, "busy": 1},
+    },
+    {
+        "id": "cult_concern",
+        "text": "How do I know you're not some kind of cult?",
+        "good_responses": ["no_money", "authentic", "humble", "community_free"],
+        "personality_weight": {"cynic": 3, "skeptic": 2, "intellectual": 1},
+    },
+    # --- Hostile/Dismissive objections ---
+    {
+        "id": "colonial_history",
+        "text": "Missionaries destroyed my ancestors' culture. Why should I listen to you?",
+        "good_responses": ["empathy", "humble", "listen", "agree_imperfect"],
+        "personality_weight": {"hostile": 3, "intellectual": 2, "cynic": 2},
+    },
+    {
+        "id": "spiritual_not_religious",
+        "text": "I'm spiritual, but not religious. Organized religion ruins everything.",
+        "good_responses": ["respect_view", "common_ground", "humble", "personal_story"],
+        "personality_weight": {"seeker": 2, "cynic": 2, "former_believer": 1},
+    },
+    {
+        "id": "politics",
+        "text": "Churches are too political these days. I want no part of it.",
+        "good_responses": ["agree_imperfect", "different_approach", "humble", "community_free"],
+        "personality_weight": {"cynic": 3, "intellectual": 1, "former_believer": 1},
+    },
+    # --- Softer/Curious objections (positive momentum) ---
+    {
+        "id": "tell_me_more",
+        "text": "I'm listening. Go on...",
+        "good_responses": ["share_story", "explain_faith", "personal_story"],
+        "personality_weight": {"seeker": 3, "lonely": 2, "curious": 1},
+        "is_positive": True,
+    },
+    {
+        "id": "genuine_interest",
+        "text": "You seem different from the others who come by. What's your story?",
+        "good_responses": ["personal_story", "share_story", "authentic"],
+        "personality_weight": {"seeker": 2, "lonely": 2, "intellectual": 1},
+        "is_positive": True,
     },
 ]
 
@@ -537,6 +682,137 @@ RESPONSES: list[dict] = [
         "tags": ["empathy", "curious_ask", "personal"],
         "interest_change": 8,
     },
+    # --- Probing/Listening responses ---
+    {
+        "id": "curious_ask",
+        "text": "What happened, if you don't mind sharing?",
+        "tags": ["empathy", "curious_ask", "personal"],
+        "interest_change": 9,
+    },
+    {
+        "id": "when_did_start",
+        "text": "That sounds painful. When did this start?",
+        "tags": ["empathy", "personal"],
+        "interest_change": 8,
+    },
+    {
+        "id": "validate_feelings",
+        "text": "I hear you. A lot of people feel that way.",
+        "tags": ["humble", "empathy"],
+        "interest_change": 7,
+    },
+    {
+        "id": "mystery_acknowledge",
+        "text": "I don't have easy answers. Some things are a mystery, even to me.",
+        "tags": ["humble", "authentic", "personal"],
+        "interest_change": 10,
+    },
+    {
+        "id": "silence_listen",
+        "text": "...",
+        "tags": ["empathy", "humble"],
+        "interest_change": 6,
+        "description": "Sometimes silence says more than words.",
+    },
+    # --- Bridge-building responses ---
+    {
+        "id": "common_ground",
+        "text": "We have more in common than you might think.",
+        "tags": ["common_ground", "humble", "friendly"],
+        "interest_change": 7,
+    },
+    {
+        "id": "not_here_to_argue",
+        "text": "I'm not here to argue or convince you. Just to listen.",
+        "tags": ["humble", "no_pressure", "empathy"],
+        "interest_change": 9,
+    },
+    {
+        "id": "doubts_valid",
+        "text": "Your doubts are valid. I've had them too.",
+        "tags": ["authentic", "personal", "humble"],
+        "interest_change": 10,
+    },
+    {
+        "id": "not_like_others",
+        "text": "I know you've probably met pushy religious types before. I try not to be.",
+        "tags": ["humble", "authentic", "different"],
+        "interest_change": 8,
+    },
+    {
+        "id": "authentic",
+        "text": "I'm not here with a script. I'm just a person who found something meaningful.",
+        "tags": ["authentic", "personal", "humble"],
+        "interest_change": 9,
+    },
+    # --- Tactful retreat responses ---
+    {
+        "id": "wrong_time",
+        "text": "I can see this isn't the right time. God bless you.",
+        "tags": ["respectful", "quick", "humble"],
+        "interest_change": 5,
+        "ends_conversation": True,
+        "polite_exit": True,
+    },
+    {
+        "id": "leave_card",
+        "text": "I'll leave you my card. No pressure, no follow-up calls.",
+        "tags": ["respectful", "no_pressure", "quick"],
+        "interest_change": 4,
+        "ends_conversation": True,
+        "polite_exit": True,
+    },
+    {
+        "id": "no_pressure_offer",
+        "text": "There's no pressure here. If you ever want to talk, I'm around.",
+        "tags": ["no_pressure", "humble", "friendly"],
+        "interest_change": 6,
+        "ends_conversation": True,
+        "polite_exit": True,
+    },
+    {
+        "id": "flexible_offer",
+        "text": "We have weeknight meetings too, if Sundays don't work.",
+        "tags": ["community", "practical", "helpful"],
+        "interest_change": 7,
+    },
+    # --- Addressing specific concerns ---
+    {
+        "id": "church_hurt",
+        "text": "What happened to you shouldn't have happened. I'm sorry.",
+        "tags": ["empathy", "humble", "personal"],
+        "interest_change": 11,
+    },
+    {
+        "id": "not_about_control",
+        "text": "Real faith isn't about control. It's about freedom.",
+        "tags": ["spiritual", "authentic", "humble"],
+        "interest_change": 8,
+    },
+    {
+        "id": "acknowledge_history",
+        "text": "You're right. The church has done terrible things. I won't defend that.",
+        "tags": ["humble", "authentic", "common_ground"],
+        "interest_change": 10,
+    },
+    {
+        "id": "personal_journey",
+        "text": "My journey isn't yours. I just want to share what helped me.",
+        "tags": ["personal", "humble", "no_pressure"],
+        "interest_change": 8,
+    },
+    {
+        "id": "fresh_perspective",
+        "text": "Maybe I can offer a different angle than what you've heard before?",
+        "tags": ["humble", "curious_ask"],
+        "interest_change": 6,
+    },
+    {
+        "id": "humble_offer",
+        "text": "I don't have all the answers, but I found something worth sharing.",
+        "tags": ["humble", "authentic", "personal"],
+        "interest_change": 8,
+    },
 ]
 
 # =============================================================================
@@ -551,6 +827,17 @@ POSITIVE_REACTIONS: list[str] = [
     "You seem genuine, I'll give you that.",
     "Maybe I've been too closed-minded.",
     "I appreciate you listening to me.",
+    # --- New positive reactions ---
+    "Go on...",
+    "I hadn't considered that before.",
+    "You're not like the others who come by.",
+    "My neighbor mentioned your church, actually.",
+    "I suppose one visit couldn't hurt.",
+    "That... actually makes sense.",
+    "You really believe all this, don't you?",
+    "Huh. That's a new one.",
+    "At least you're honest about it.",
+    "I can respect that approach.",
 ]
 
 # =============================================================================
@@ -563,6 +850,15 @@ NEGATIVE_REACTIONS: list[str] = [
     "This isn't going anywhere.",
     "I need you to go now.",
     "You're wasting your time.",
+    # --- New negative reactions ---
+    "I really don't have time for this.",
+    "You're not going to change my mind.",
+    "I'm sorry, but no.",
+    "Maybe some other time.",
+    "Look, I appreciate the effort, but...",
+    "This conversation is over.",
+    "I think you should go.",
+    "That's not going to work on me.",
 ]
 
 # =============================================================================
@@ -575,6 +871,15 @@ CONVERSION_LINES: list[str] = [
     "I've been searching for something. Maybe this is it.",
     "Alright, you've convinced me to give it a try.",
     "There's something different about you. I'm interested.",
+    # --- New conversion lines ---
+    "Something about you feels... different.",
+    "My mother would have liked you. Alright, I'll come.",
+    "One Sunday. That's all I'm promising.",
+    "I don't know why, but I trust you.",
+    "Fine. But only because you actually listened to me.",
+    "You caught me at the right time, I guess.",
+    "I've been feeling lost lately. Maybe this is a sign.",
+    "Okay. But if it's weird, I'm leaving.",
 ]
 
 # =============================================================================
