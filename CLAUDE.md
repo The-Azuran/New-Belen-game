@@ -1,6 +1,6 @@
 # New Belen Game - AI Assistant Context
 
-Quick reference and standing orders for AI assistants working on this project.
+Quick reference for AI assistants working on this project.
 
 **Last updated:** 2026-02-02
 
@@ -22,76 +22,13 @@ Quick reference and standing orders for AI assistants working on this project.
 
 ## Standing Orders
 
-Based on lessons from prior projects and AI-assisted development best practices.
+This project follows the universal standing orders at `~/.claude/STANDING-ORDERS.md`.
 
-### 1. Context First, Code Second
+**Project-specific additions:**
 
-Before writing any code:
-
-1. **Understand the codebase** - Know what exists before adding
-2. **Read existing modules** - Check patterns and conventions in `preaching/`
-3. **Check the architecture** - Understand how components interact
-
-> Don't reinvent what's already there. Extend, don't duplicate.
-
-### 2. Plan Before Implementing
-
-For any non-trivial task:
-
-1. **State what you understand** - Summarize the task back
-2. **Identify the approach** - Which modules, what changes, what outputs
-3. **Note risks/edge cases** - Breaking changes, balance implications
-4. **Get approval** - Present plan before executing
-
-### 3. Small, Testable Chunks
-
-Game code can be complex. Keep changes manageable:
-
-1. **One feature per change** - Atomic, focused modifications
-2. **Verify changes work** - Test before moving on
-3. **Preserve existing behavior** - Don't break what works
-
-> Large changes are hard to debug when game logic fails silently.
-
-### 4. Document Changes
-
-Track what's modified:
-
-1. **Note what changed** - Which files, what functionality
-2. **Explain why** - What problem does this solve?
-3. **Version outputs** - Use meaningful commit messages
-
-### 5. Human Accountability
-
-You are an "over-confident pair programmer prone to mistakes":
-
-1. **Flag uncertainty** - Especially about game balance and design decisions
-2. **Explain your reasoning** - Don't just dump code
-3. **Accept correction** - User feedback overrides your assumptions
-
-### 6. Authorship & Attribution
-
-All code is authored by **Rowan Valle** (also known as Raudhan Valis).
-
-**Git commits:**
-- Author: `Rowan Valle <valis@symbiont.systems>`
-- Do NOT use Co-Authored-By for Claude/AI
-
-**Code comments and documentation:**
-- Credit: "By Symbiont Systems LLC" or "By Rowan Valle"
-- Tool acknowledgment: "Built with Claude Code"
-
-The AI assistant is a tool, not a co-author.
-
-### 7. Show Task Progression
-
-Always use the task list system for non-trivial work:
-
-1. **Create tasks upfront** - Break work into trackable steps before starting
-2. **Update status as you go** - Mark tasks in_progress when starting, completed when done
-3. **Keep the user informed** - The task list provides visibility into what's happening
-
-> This isn't busywork—it's a contract. The task list shows your reasoning, tracks progress, and creates accountability.
+- **Preserve existing behavior** - Don't break what works; game balance is fragile
+- **Flag design uncertainty** - Game balance and narrative decisions need human judgment
+- **No external dependencies** - Pure Python stdlib for portability
 
 ---
 
