@@ -15,8 +15,9 @@ from .config import (
     FOOD_OR_BIBLE_SPLIT,
     SATANIC_ALLY_BONUS,
 )
-from .enums import Religion
+from .enums import Religion, DemonType
 from .logic import reduce_hunger
+from .combat import CombatEngine
 
 
 @dataclass
@@ -41,6 +42,18 @@ def not_satanic(state: GameState) -> bool:
 def is_satanic(state: GameState) -> bool:
     """Condition: player is a Satanic preacher."""
     return state.religion == Religion.SATANIC
+
+
+def has_high_satanic_score(state: GameState) -> bool:
+    """Condition: player has high satanic score (>5)."""
+    return state.satanic_score > 5
+
+
+def in_satanic_church(state: GameState) -> bool:
+    """Condition: player is in a Satanic church."""
+    return (state.chosen_location and
+            state.chosen_location.location_type.name == "CHURCH" and
+            state.chosen_location.affiliation == Religion.SATANIC)
 
 
 def handle_food_donation(state: GameState, ui: ConsoleUI) -> None:
@@ -87,6 +100,22 @@ class EventManager:
         # These are nested - first check if any bad response event triggers
         # Then determine which specific one
 
+        # Demon encounter on failed conversion (15% chance when satanic_score > 5)
+        self.failure_events.append(Event(
+            name="Demon Encounter",
+            probability=0.15,
+            condition=has_high_satanic_score,
+            handler=handle_demon_encounter,
+        ))
+
+        # Demon encounter in Satanic church (30% chance)
+        self.failure_events.append(Event(
+            name="Satanic Church Demon",
+            probability=0.30,
+            condition=in_satanic_church,
+            handler=handle_satanic_church_demon,
+        ))
+
     def register_success_event(self, event: Event) -> None:
         """Register a new event that can trigger on success."""
         self.success_events.append(event)
@@ -114,3 +143,85 @@ class EventManager:
             else:
                 # Satanic preachers meet allies
                 handle_satanic_ally(state, ui)
+
+        # Check for demon encounter on failed conversion (15% chance when satanic_score > 5)
+        if state.satanic_score > 5 and random.random() < 0.15:
+            trigger_demon_encounter(state, ui)
+
+
+def handle_demon_encounter(state: GameState, ui: ConsoleUI) -> None:
+    """Handle a demon encounter event."""
+    from .models import NPC
+    from .enums import DemonType
+
+    ui.display_message("You sense a dark presence...")
+    ui.display_message("This person seems... different. Unclean.")
+
+    # Create a demonic NPC
+    demon_npc = NPC(
+        name=f"Demonic Presence",
+        personality="hostile",
+        mood="aggressive",
+        demonic=True,
+        demon_type=random.choice([DemonType.TEMPTATION, DemonType.DECEPTION, DemonType.OPPRESSION]),
+        faith_resistance=random.randint(20, 60),
+        demonic_power=random.randint(30, 70),
+        aggression=random.randint(40, 90),  # Higher aggression for potential physical combat
+        spiritual_health=random.randint(40, 80),
+        physical_health=random.randint(20, 60),
+    )
+
+    # Scale difficulty with day_of_week and satanic_score
+    difficulty_scale = 1.0 + (state.day_of_week * 0.1) + (state.satanic_score * 0.05)
+    demon_npc.faith_resistance = int(demon_npc.faith_resistance * difficulty_scale)
+    demon_npc.demonic_power = int(demon_npc.demonic_power * difficulty_scale)
+    demon_npc.spiritual_health = int(demon_npc.spiritual_health * difficulty_scale)
+    demon_npc.physical_health = int(demon_npc.physical_health * difficulty_scale)
+
+    # Start combat
+    combat_engine = CombatEngine()
+    combat_state = combat_engine.start_combat(demon_npc, state)
+
+    ui.display_message(f"A {demon_npc.demon_type.value} demon reveals itself!")
+    ui.display_message("You must engage in spiritual warfare!")
+
+
+def handle_satanic_church_demon(state: GameState, ui: ConsoleUI) -> None:
+    """Handle demon encounter in Satanic church (30% chance)."""
+    from .models import NPC
+    from .enums import DemonType
+
+    ui.display_message("The air in this Satanic church feels heavy with evil...")
+    ui.display_message("A powerful demonic presence manifests!")
+
+    # Create a stronger demon for Satanic church (possibly boss)
+    demon_npc = NPC(
+        name=f"Ancient Demon",
+        personality="hostile",
+        mood="aggressive",
+        demonic=True,
+        demon_type=random.choice([DemonType.OPPRESSION, DemonType.POSSESSION]),
+        faith_resistance=random.randint(50, 80),
+        demonic_power=random.randint(60, 90),
+        aggression=random.randint(60, 100),
+        spiritual_health=random.randint(60, 100),
+        physical_health=random.randint(40, 80),
+    )
+
+    # Start combat
+    combat_engine = CombatEngine()
+    combat_state = combat_engine.start_combat(demon_npc, state)
+
+    ui.display_message(f"A powerful {demon_npc.demon_type.value} demon attacks!")
+
+
+def trigger_demon_encounter(state: GameState, ui: ConsoleUI) -> None:
+    """Trigger a demon encounter based on context."""
+    # Check if in Satanic church (30% chance)
+    if (state.chosen_location and
+        state.chosen_location.location_type.name == "CHURCH" and
+        state.chosen_location.affiliation == Religion.SATANIC and
+        random.random() < 0.30):
+        handle_satanic_church_demon(state, ui)
+    else:
+        handle_demon_encounter(state, ui)

@@ -766,6 +766,105 @@ class ConsoleUI:
         if text:
             print(f"\n{text}\n")
 
+    # Combat display methods
+    def display_combat_start(self, demon_name: str, demon_type: str, combat_type: str) -> None:
+        """Display the start of a combat encounter."""
+        print(f"\n{'='*50}")
+        print(f"SPIRITUAL WARFARE: {demon_name}")
+        print(f"{'='*50}")
+        print(f"Demon Type: {demon_type}")
+        print(f"Combat Type: {combat_type}")
+        print()
+
+    def display_combat_header(self, demon_name: str, spiritual_health: int, physical_health: int,
+                             player_faith: int, max_faith: int) -> None:
+        """Display combat status header."""
+        print(f"{'='*50}")
+        print(f"  Fighting: {demon_name}")
+
+        # Display health bars
+        if spiritual_health > 0:
+            sp_bar_pos = max(0, min(20, int(spiritual_health / 5)))
+            sp_bar = "█" * sp_bar_pos + "░" * (20 - sp_bar_pos)
+            print(f"  Spiritual Health: [{sp_bar}] {spiritual_health}")
+
+        if physical_health > 0:
+            ph_bar_pos = max(0, min(20, int(physical_health / 3)))
+            ph_bar = "█" * ph_bar_pos + "░" * (20 - ph_bar_pos)
+            print(f"  Physical Health:  [{ph_bar}] {physical_health}")
+
+        # Faith bar
+        faith_percent = (player_faith / max_faith) * 100 if max_faith > 0 else 0
+        faith_bar_pos = max(0, min(20, int(faith_percent / 5)))
+        faith_bar = "▓" * faith_bar_pos + "░" * (20 - faith_bar_pos)
+        print(f"  Your Faith:      [{faith_bar}] {player_faith}/{max_faith}")
+
+        print(f"{'='*50}\n")
+
+    def display_combat_actions(self, actions: list[dict]) -> int:
+        """Display available combat actions and get selection."""
+        print("Choose your action:\n")
+        for i, action in enumerate(actions, start=1):
+            faith_cost = action.get('faith_cost', 0)
+            cost_text = f" (Costs {faith_cost} faith)" if faith_cost > 0 else ""
+            print(f"{i}. {action['name']}{cost_text}")
+            print(f"   {action['description']}")
+            print()
+        return self._get_valid_input("Choose action: ", 1, len(actions))
+
+    def display_combat_result(self, demon_response: str, faith_change: int,
+                            demon_health_change: int, player_health_change: int,
+                            modifiers: list[tuple[str, int]]) -> None:
+        """Display combat action result."""
+        print(f"\n{demon_response}\n")
+
+        # Display changes
+        if faith_change != 0:
+            change_text = f"+{faith_change}" if faith_change > 0 else str(faith_change)
+            print(f"Faith: {change_text}")
+
+        if demon_health_change != 0:
+            change_text = f"-{abs(demon_health_change)}" if demon_health_change < 0 else f"+{demon_health_change}"
+            print(f"Demon Health: {change_text}")
+
+        if player_health_change != 0:
+            change_text = f"-{abs(player_health_change)}" if player_health_change < 0 else f"+{player_health_change}"
+            print(f"Your Health: {change_text}")
+
+        # Display modifiers
+        if modifiers:
+            print("\nModifiers:")
+            for mod_name, mod_value in modifiers:
+                if mod_value != 0:
+                    value_text = f"+{mod_value}" if mod_value > 0 else str(mod_value)
+                    print(f"  {mod_name}: {value_text}")
+
+        print()
+
+    def display_combat_ended(self, demon_defeated: bool, player_fled: bool) -> None:
+        """Display combat end message."""
+        print(f"\n{'='*50}")
+        if demon_defeated:
+            print("VICTORY! The demon has been defeated!")
+            print("Your faith has proven stronger.")
+        elif player_fled:
+            print("RETREAT! You have fled from the demon.")
+            print("The battle is lost, but the war continues.")
+        else:
+            print("COMBAT ENDED")
+        print(f"{'='*50}\n")
+
+    def display_low_faith_warning(self, current_faith: int) -> None:
+        """Display warning when faith is low."""
+        if current_faith < 30:
+            print("\n⚠️  WARNING: Your faith is running low!")
+            print("   Consider praying or visiting a church to restore it.\n")
+
+    def display_demon_sense(self, npc_name: str) -> None:
+        """Display Belen's sense of a demonic presence."""
+        print(f"\n* You sense something... unclean about {npc_name}. *")
+        print("* Your ex-witch instincts are tingling... *\n")
+
     def display_weather_narrative(self, narrative: str) -> None:
         """Display weather-related narrative at day start."""
         print(f"{narrative}")

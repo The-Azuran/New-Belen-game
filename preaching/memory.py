@@ -22,6 +22,11 @@ class EventType(Enum):
     RESISTANT_REVEALED = "resistant_revealed"  # Found out someone can't be converted
     DAY_START = "day_start"
     DAY_END = "day_end"
+    # Combat events
+    DEMON_ENCOUNTER = "demon_encounter"
+    DEMON_DEFEAT = "demon_defeat"
+    DEMON_ESCAPE = "demon_escape"
+    PHYSICAL_CONFRONTATION = "physical_confrontation"
 
 
 @dataclass
@@ -304,6 +309,53 @@ class MemoryManager:
             neighborhood=neighborhood,
             npc_name=npc_name,
             tags=["knowledge", "limitation"],
+        ))
+
+    def record_demon_encounter(self, day: int, neighborhood: str, npc_name: str,
+                              demon_type: str, combat_type: str) -> None:
+        """Record encountering a demon."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_ENCOUNTER,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            details={"demon_type": demon_type, "combat_type": combat_type},
+            tags=["combat", "supernatural", "danger"],
+        ))
+
+    def record_demon_defeat(self, day: int, neighborhood: str, npc_name: str,
+                           demon_type: str, combat_type: str) -> None:
+        """Record defeating a demon."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_DEFEAT,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            details={"demon_type": demon_type, "combat_type": combat_type},
+            tags=["combat", "victory", "supernatural"],
+        ))
+
+    def record_demon_escape(self, day: int, neighborhood: str, npc_name: str,
+                           demon_type: str) -> None:
+        """Record fleeing from a demon."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_ESCAPE,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            details={"demon_type": demon_type},
+            tags=["combat", "retreat", "supernatural"],
+        ))
+
+    def record_physical_confrontation(self, day: int, neighborhood: str,
+                                     npc_name: str) -> None:
+        """Record a physical confrontation with a demon."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.PHYSICAL_CONFRONTATION,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            tags=["combat", "physical", "danger"],
         ))
 
     # Query methods for narrative generation

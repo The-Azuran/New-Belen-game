@@ -1,6 +1,8 @@
 """Main game orchestrator."""
 from __future__ import annotations
 
+import random
+
 from .config import (
     AVAILABLE_RELIGIONS,
     GAME_DAYS,
@@ -424,8 +426,12 @@ class Game:
             self.ui.display_hunger(self.state.hunger)
             return
 
-        # Run the new conversation system
-        self._run_conversation(npc, npc_id)
+        # Check if NPC is demonic - run combat instead of conversation
+        if npc.demonic:
+            self._run_combat(npc)
+        else:
+            # Run the new conversation system
+            self._run_conversation(npc, npc_id)
 
         apply_hunger(self.state)
         self.state.use_pamphlet_charge()  # Use pamphlet charge if active
@@ -479,6 +485,23 @@ class Game:
             self.ui.display_friendly_church(location.name)
             apply_friendly_church_buff(self.state)
             self.ui.display_church_buff()
+
+            # Regenerate faith at church (+20-30 faith)
+            faith_restored = random.randint(20, 30)
+            # Apply preacher faith regen multiplier
+            faith_restored = int(faith_restored * self.state.preacher_faith_regen)
+            # Apply silver cross bonus if player has it
+            if "silver_cross" in self.state.holy_items:
+                faith_restored = int(faith_restored * 1.5)
+
+            old_faith = self.state.faith
+            self.state.faith = min(self.state.max_faith, self.state.faith + faith_restored)
+            actual_restored = self.state.faith - old_faith
+
+            if actual_restored > 0:
+                self.ui.display_message(f"\nThe church service restores {actual_restored} faith!")
+                self.ui.display_message(f"Faith: {old_faith} → {self.state.faith}/{self.state.max_faith}")
+
             # Record friendly church in memory
             self.memory.record_friendly_church(
                 self.state.day_of_week, neighborhood_name, location.name
@@ -743,6 +766,153 @@ class Game:
 
         # Restore original mood for NPC
         npc.mood = original_mood
+
+    def _run_combat(self, npc: NPC) -> None:
+        """Run a combat encounter with a demonic NPC."""
+        from .combat import CombatEngine
+        from .enums import CombatType
+
+        # Check if NPC is actually demonic
+        if not npc.demonic:
+            return
+
+        assert self.state.current_neighborhood is not None
+        neighborhood_name = self.state.current_neighborhood.name
+
+        # Display demon sense warning and thought
+        self.ui.display_demon_sense(npc.name)
+        demon_thought = self.narrative.get_demon_sense_thought(npc)
+        if demon_thought:
+            self.ui.display_internal_thought(demon_thought)
+
+        # Start combat
+        combat_engine = CombatEngine()
+        combat_state = combat_engine.start_combat(npc, self.state)
+
+        # Record demon encounter
+        self.memory.record_demon_encounter(
+            day=self.state.day_of_week,
+            neighborhood=neighborhood_name,
+            npc_name=npc.name,
+            demon_type=combat_state.demon_type.value,
+            combat_type=combat_state.combat_type.value
+        )
+
+        # Record physical confrontation if applicable
+        if combat_state.combat_type == CombatType.PHYSICAL:
+            self.memory.record_physical_confrontation(
+                day=self.state.day_of_week,
+                neighborhood=neighborhood_name,
+                npc_name=npc.name
+            )
+
+        # Display combat start
+        if combat_state.combat_type == CombatType.BOSS:
+            combat_type_str = "Boss"
+        elif combat_state.combat_type == CombatType.SPIRITUAL:
+            combat_type_str = "Spiritual"
+        else:
+            combat_type_str = "Physical"
+        self.ui.display_combat_start(
+            demon_name=npc.name,
+            demon_type=combat_state.demon_type.value,
+            combat_type=combat_type_str
+        )
+
+        # Main combat loop
+        while self.state.current_combat and not (
+            combat_state.demon_spiritual_health <= 0 or
+            combat_state.demon_physical_health <= 0
+        ):
+            # Clear screen for fresh turn
+            self.ui.clear_screen()
+
+            # Display combat header
+            self.ui.display_combat_header(
+                demon_name=npc.name,
+                spiritual_health=combat_state.demon_spiritual_health,
+                physical_health=combat_state.demon_physical_health,
+                player_faith=self.state.faith,
+                max_faith=self.state.max_faith
+            )
+
+            # Display low faith warning if needed
+            self.ui.display_low_faith_warning(self.state.faith)
+            low_faith_thought = self.narrative.get_low_faith_thought(
+                self.state.faith, self.state.max_faith
+            )
+            if low_faith_thought:
+                self.ui.display_internal_thought(low_faith_thought)
+
+            # Get available actions
+            actions = combat_engine.get_combat_actions(combat_state, self.state)
+            if not actions:
+                self.ui.display_message("No actions available!")
+                break
+
+            # Player chooses action
+            action_choice = self.ui.display_combat_actions(actions)
+            action = actions[action_choice - 1]
+
+            # Apply action
+            result = combat_engine.apply_combat_action(combat_state, action["id"], self.state)
+
+            # Display result
+            self.ui.display_combat_result(
+                demon_response=result.demon_response,
+                faith_change=result.faith_change,
+                demon_health_change=result.demon_health_change,
+                player_health_change=result.player_health_change,
+                modifiers=result.modifiers
+            )
+
+            # Check if combat ended
+            if result.combat_ended:
+                self.ui.display_combat_ended(
+                    demon_defeated=result.demon_defeated,
+                    player_fled=result.player_fled
+                )
+
+                # Record outcome in memory
+                if result.demon_defeated:
+                    self.memory.record_demon_defeat(
+                        day=self.state.day_of_week,
+                        neighborhood=neighborhood_name,
+                        npc_name=npc.name,
+                        demon_type=combat_state.demon_type.value,
+                        combat_type=combat_state.combat_type.value
+                    )
+                elif result.player_fled:
+                    self.memory.record_demon_escape(
+                        day=self.state.day_of_week,
+                        neighborhood=neighborhood_name,
+                        npc_name=npc.name,
+                        demon_type=combat_state.demon_type.value
+                    )
+
+                combat_engine.end_combat(combat_state, self.state, result.player_fled)
+
+                # Show post-combat thought
+                post_combat_thought = self.narrative.get_post_combat_thought(
+                    result.demon_defeated,
+                    combat_state.demon_type.value
+                )
+                if post_combat_thought:
+                    self.ui.display_internal_thought(post_combat_thought)
+
+                break
+
+            # Demon's turn (simple counterattack)
+            if not result.combat_ended:
+                demon_damage = random.randint(5, 15)
+                self.ui.display_message(f"\nThe demon counterattacks for {demon_damage} damage!")
+                # In a full implementation, this would reduce player health
+
+            self.ui.prompt_continue()
+
+        # Clean up if combat wasn't already ended
+        if self.state.current_combat:
+            combat_engine.end_combat(combat_state, self.state, False)
 
     def _handle_conversion_success(self, npc_id: int, neighborhood_name: str, npc: NPC,
                                     approach_tags: list[str]) -> None:

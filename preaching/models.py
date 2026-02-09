@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
-from .enums import LocationType, Religion, Strategy, Weather
+from .enums import LocationType, Religion, Strategy, Weather, CombatType, DemonType, CombatActionType
 from .names import (
     generate_person_name,
     generate_store_name,
@@ -46,6 +46,14 @@ class NPC:
     failed_attempts: int = 0
     resistant: bool = field(default_factory=lambda: random.choice([True, False]))
     revealed_resistant: bool = False  # True if library revealed their resistance status
+    # Combat-related fields (for demonic NPCs)
+    demonic: bool = False
+    demon_type: Optional[DemonType] = None
+    faith_resistance: int = 0  # 0-100
+    demonic_power: int = 0
+    aggression: int = 0  # Determines physical confrontation chance (0-100)
+    spiritual_health: int = 0
+    physical_health: int = 0
 
 
 @dataclass
@@ -253,6 +261,18 @@ class InventoryItem:
 
 
 @dataclass
+class CombatState:
+    """Tracks the state of an ongoing combat encounter."""
+    combat_type: CombatType
+    demon_type: DemonType
+    npc: NPC
+    turn: int = 0
+    player_faith: int = 0
+    demon_spiritual_health: int = 0
+    demon_physical_health: int = 0
+
+
+@dataclass
 class GameState:
     """All mutable game state in one place."""
     score: int = 0
@@ -289,8 +309,17 @@ class GameState:
     preacher_conversion_bonus: float = 0.0
     preacher_hunger_rate: float = 1.0
     preacher_personality_bonus: dict[str, float] = field(default_factory=dict)
+    preacher_combat_bonus: dict[str, float] = field(default_factory=dict)  # Bonus vs demon types
+    preacher_faith_regen: float = 1.0  # Faith regeneration multiplier
     # World generation seed
     world_seed: int = 0
+    # Combat system fields
+    faith: int = 100           # New spiritual energy resource (0-100)
+    max_faith: int = 100
+    holy_items: List[str] = field(default_factory=list)
+    demon_encounters: int = 0
+    demon_defeats: int = 0
+    current_combat: Optional[CombatState] = None
 
     @classmethod
     def create_new_game(cls, seed: Optional[int] = None) -> "GameState":

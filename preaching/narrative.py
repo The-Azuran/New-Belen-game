@@ -273,6 +273,73 @@ class NarrativeEngine:
 
         return random.choice(thoughts)
 
+    # === DEMON-RELATED THOUGHTS ===
+
+    def get_demon_sense_thought(self, npc: "NPC") -> Optional[str]:
+        """Get Belen's thought when sensing a demonic presence."""
+        thoughts = [
+            f"You sense something... unclean about {npc.name}.",
+            f"Your ex-witch instincts are tingling... {npc.name} feels wrong.",
+            f"There's a darkness around {npc.name}. You've felt this before.",
+            f"{npc.name} isn't just resistant... there's something else there.",
+        ]
+
+        # Check for previous demon encounters
+        demon_memories = self.memory.get_memories_by_type(self.memory.EventType.DEMON_ENCOUNTER)
+        if demon_memories:
+            thoughts.extend([
+                "Another one. How many are out there?",
+                "The veil is thin today. You can feel it.",
+                "Your past gives you eyes to see what others cannot.",
+            ])
+
+        return random.choice(thoughts)
+
+    def get_low_faith_thought(self, current_faith: int, max_faith: int) -> Optional[str]:
+        """Get thought when faith is low."""
+        if current_faith < 30:
+            thoughts = [
+                "Your spiritual energy is low. Be careful.",
+                "The well is running dry. You need to pray.",
+                "Without faith, you're just a woman with words.",
+                "You feel weak. The light within is fading.",
+            ]
+            return random.choice(thoughts)
+        elif current_faith < 50:
+            thoughts = [
+                "Your faith is waning. Steady yourself.",
+                "You could use some spiritual replenishment.",
+                "The battle takes its toll on your spirit.",
+            ]
+            return random.choice(thoughts)
+        return None
+
+    def get_post_combat_thought(self, demon_defeated: bool, demon_type: str) -> Optional[str]:
+        """Get thought after combat with a demon."""
+        if demon_defeated:
+            thoughts = [
+                f"The {demon_type} demon is gone. For now.",
+                "Victory, but at what cost to your spirit?",
+                "You stood your ground. The light prevailed.",
+                "Another battle won. How many more to come?",
+            ]
+
+            # Special thoughts for Belen (ex-witch)
+            thoughts.extend([
+                "Your old life prepared you for this.",
+                "You understand them because you were almost one of them.",
+                "The Vudu taught you how to fight darkness.",
+            ])
+        else:
+            thoughts = [
+                "It got away. It will be back.",
+                "You survived, but the demon escaped.",
+                "A temporary retreat. The war continues.",
+                "You live to fight another day.",
+            ]
+
+        return random.choice(thoughts)
+
     # === JOURNAL ENTRIES ===
 
     def generate_journal_entry(self, summary: "DaySummary") -> str:

@@ -225,6 +225,12 @@ MOODS: dict[str, dict] = {
         "patience": 5,
         "visual_hint": "They seem to be in a great mood today.",
     },
+    "aggressive": {
+        "name": "Aggressive",
+        "interest_bonus": -20,
+        "patience": 2,
+        "visual_hint": "They glare at you with barely contained hostility.",
+    },
 }
 
 # =============================================================================

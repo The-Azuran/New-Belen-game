@@ -148,6 +148,27 @@ def effect_bible_bonus(state: GameState) -> None:
     state.bible_bonus += 0.05
 
 
+def effect_holy_water(state: GameState) -> None:
+    """Add holy water to holy items inventory."""
+    state.holy_items.append("holy_water")
+
+
+def effect_silver_cross(state: GameState) -> None:
+    """Add silver cross to holy items inventory."""
+    state.holy_items.append("silver_cross")
+
+
+def effect_anointing_oil(state: GameState) -> None:
+    """Add anointing oil to holy items inventory."""
+    state.holy_items.append("anointing_oil")
+
+
+def effect_exorcism_pamphlet(state: GameState) -> None:
+    """Add exorcism pamphlet (special combat pamphlet)."""
+    # This is a special pamphlet that provides combat bonuses
+    state.holy_items.append("exorcism_pamphlet")
+
+
 # Standard store inventory
 STORE_ITEMS = [
     Item(
@@ -222,6 +243,39 @@ STORE_ITEMS = [
         effect=effect_bible_bonus,
         storable=False,  # Applied immediately
     ),
+    # Holy items for combat
+    Item(
+        name="Holy Water",
+        description="Blessed water that damages demons (consumable)",
+        price=10,
+        effect=effect_holy_water,
+        storable=True,
+        item_type="holy_item",
+    ),
+    Item(
+        name="Silver Cross",
+        description="Increases faith regeneration by 50%",
+        price=25,
+        effect=effect_silver_cross,
+        storable=True,
+        item_type="holy_item",
+    ),
+    Item(
+        name="Anointing Oil",
+        description="+25% damage against oppression demons",
+        price=20,
+        effect=effect_anointing_oil,
+        storable=True,
+        item_type="holy_item",
+    ),
+    Item(
+        name="Exorcism Pamphlet",
+        description="Special pamphlet for demon encounters",
+        price=12,
+        effect=effect_exorcism_pamphlet,
+        storable=True,
+        item_type="holy_item",
+    ),
 ]
 
 
@@ -232,6 +286,7 @@ def get_random_store_inventory(count: int = 5) -> list[Item]:
     food_items = [i for i in STORE_ITEMS if "hunger" in i.description.lower() or
                   any(word in i.name.lower() for word in ["candy", "chips", "sandwich", "dog", "burrito", "chicken"])]
     special_items = [i for i in STORE_ITEMS if i not in food_items]
+    holy_items = [i for i in STORE_ITEMS if i.item_type == "holy_item"]
 
     inventory = []
     # Add 2-3 food items
@@ -244,5 +299,9 @@ def get_random_store_inventory(count: int = 5) -> list[Item]:
     if random.random() < 0.3:
         pamphlet = random.choice(PAMPHLET_TYPES)
         inventory.append(create_pamphlet_item(pamphlet))
+
+    # 5% chance to include a holy item (as specified in plan)
+    if random.random() < 0.05 and holy_items:
+        inventory.append(random.choice(holy_items))
 
     return inventory[:count]

@@ -21,6 +21,9 @@ class Preacher:
     hunger_rate: float = 1.0  # Multiplier for hunger gain (lower = better)
     # Personality affinities - bonus with certain NPC types
     personality_bonus: dict[str, float] = field(default_factory=dict)
+    # Combat bonuses
+    combat_bonus: dict[str, float] = field(default_factory=dict)  # Bonus vs specific demon types (by string name)
+    faith_regen: float = 1.0  # Faith regeneration multiplier
     # Special abilities
     special: str = ""
 
@@ -30,6 +33,9 @@ class Preacher:
         state.preacher_conversion_bonus = self.conversion_bonus
         state.preacher_hunger_rate = self.hunger_rate
         state.preacher_personality_bonus = self.personality_bonus.copy()
+        # Apply combat bonuses
+        state.preacher_combat_bonus = self.combat_bonus.copy()
+        state.preacher_faith_regen = self.faith_regen
 
 
 # Preset preachers
@@ -43,6 +49,8 @@ PREACHERS: list[Preacher] = [
         money_bonus=15,  # Makes money from her online ministry
         hunger_rate=1.1,  # Old bones tire faster
         personality_bonus={"lonely": 0.15, "seeker": 0.20, "skeptic": -0.10},  # Great with seekers, skeptics don't buy it
+        combat_bonus={"temptation": 0.25, "oppression": 0.15},  # +25% vs temptation, +15% vs oppression
+        faith_regen=1.2,  # 20% faster faith regeneration
         special="Ex-witch who survived Haitian Vudu and demon encounters. Her testimony is wild.",
     ),
     Preacher(
