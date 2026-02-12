@@ -305,9 +305,16 @@ class ConsoleUI:
                 resistance_hint = " [Resistant]" if npc.resistant else " [Receptive]"
             print(f"{i}. {npc.name}: {status}{resistance_hint}")
 
-    def display_empty_location(self) -> None:
+    def display_empty_location(self, location_type: str = "House") -> None:
         """Show message for empty location."""
-        print("This location appears to be empty. No one is home.\n")
+        empty_text = {
+            "House": "This location appears to be empty. No one is home.",
+            "Park": "The park is empty. Nobody around.",
+            "Diner": "The diner is empty. Just you and the coffee pot.",
+            "Laundromat": "The laundromat is empty. Just humming machines.",
+            "Community Center": "The community center is quiet. Nobody here.",
+        }.get(location_type, "This location appears to be empty. No one is home.")
+        print(f"{empty_text}\n")
 
     def display_already_converted(self) -> None:
         """Show message when NPC is already converted."""
@@ -714,7 +721,8 @@ class ConsoleUI:
             elif value < 0:
                 print(f"    {value} {name}")
 
-    def display_conversion_result(self, converted: bool, rejected: bool, polite_exit: bool) -> None:
+    def display_conversion_result(self, converted: bool, rejected: bool,
+                                   polite_exit: bool, location_type: str = "House") -> None:
         """Display the final result of a conversation."""
         print()
         if converted:
@@ -722,8 +730,15 @@ class ConsoleUI:
             print("  SUCCESS! They want to learn more!")
             print("*" * 40)
         elif rejected:
+            rejection_text = {
+                "House": "They've had enough and close the door.",
+                "Park": "They shake their head and walk away.",
+                "Diner": "They turn back to their coffee. Conversation over.",
+                "Laundromat": "They put in their earbuds and ignore you.",
+                "Community Center": "They excuse themselves and rejoin the group.",
+            }.get(location_type, "They've had enough and close the door.")
             print("-" * 40)
-            print("  They've had enough and close the door.")
+            print(f"  {rejection_text}")
             print("-" * 40)
         elif polite_exit:
             print("You part ways amicably.")
@@ -731,9 +746,16 @@ class ConsoleUI:
             print("The conversation ends.")
         print()
 
-    def display_no_answer(self, npc_name: str) -> None:
+    def display_no_answer(self, npc_name: str, location_type: str = "House") -> None:
         """Display when NPC won't answer the door."""
-        print(f"\n{npc_name} doesn't answer the door.")
+        no_answer_text = {
+            "House": f"{npc_name} doesn't answer the door.",
+            "Park": f"{npc_name} pretends not to see you.",
+            "Diner": f"{npc_name} buries their face in the menu.",
+            "Laundromat": f"{npc_name} stares at the dryer, avoiding eye contact.",
+            "Community Center": f"{npc_name} turns away as you approach.",
+        }.get(location_type, f"{npc_name} doesn't answer the door.")
+        print(f"\n{no_answer_text}")
         print("Word has gotten around... Your reputation precedes you.\n")
 
     def display_pamphlet_selection(self, pamphlets: list[Pamphlet]) -> int:

@@ -211,13 +211,21 @@ class NarrativeEngine:
         return random.choice(thoughts)
 
     def get_post_rejection_thought(self, context: NarrativeContext, npc: "NPC",
-                                   was_aggressive: bool = False) -> Optional[str]:
+                                   was_aggressive: bool = False,
+                                   location_type: str = "House") -> Optional[str]:
         """Get Belen's thought after being rejected."""
-        thoughts = [
-            "Their door closes. You move on.",
-            "Not everyone is ready.",
-            "You tell yourself it's not personal.",
-        ]
+        if location_type != "House":
+            thoughts = [
+                "They walk away. You move on.",
+                "Not everyone is ready.",
+                "You tell yourself it's not personal.",
+            ]
+        else:
+            thoughts = [
+                "Their door closes. You move on.",
+                "Not everyone is ready.",
+                "You tell yourself it's not personal.",
+            ]
 
         if was_aggressive:
             thoughts.extend([
@@ -234,11 +242,18 @@ class NarrativeEngine:
                 "Why won't anyone listen?",
             ])
         if context.rejection_streak >= 5:
-            thoughts = [
-                "What are you even doing out here?",
-                "Five rejections. Maybe they're right to refuse.",
-                "The silence after the slammed door feels louder each time.",
-            ]
+            if location_type != "House":
+                thoughts = [
+                    "What are you even doing out here?",
+                    "Five rejections. Maybe they're right to refuse.",
+                    "The silence after being ignored feels louder each time.",
+                ]
+            else:
+                thoughts = [
+                    "What are you even doing out here?",
+                    "Five rejections. Maybe they're right to refuse.",
+                    "The silence after the slammed door feels louder each time.",
+                ]
 
         # Hostile personality
         if npc.personality == "hostile":
@@ -252,13 +267,21 @@ class NarrativeEngine:
 
         return random.choice(thoughts)
 
-    def get_no_answer_thought(self, context: NarrativeContext) -> Optional[str]:
+    def get_no_answer_thought(self, context: NarrativeContext,
+                              location_type: str = "House") -> Optional[str]:
         """Get thought when nobody answers the door."""
-        thoughts = [
-            "No answer. Did they see you coming?",
-            "The door stays closed.",
-            "Maybe they're not home. Maybe.",
-        ]
+        if location_type != "House":
+            thoughts = [
+                "No answer. Did they see you coming?",
+                "They won't talk to you.",
+                "Maybe they're busy. Maybe.",
+            ]
+        else:
+            thoughts = [
+                "No answer. Did they see you coming?",
+                "The door stays closed.",
+                "Maybe they're not home. Maybe.",
+            ]
 
         if context.reputation_in_area < -5:
             thoughts.extend([

@@ -424,10 +424,11 @@ class Game:
         assert self.state.current_neighborhood is not None
         location = self.state.chosen_location
         neighborhood_name = self.state.current_neighborhood.name
+        location_type_str = location.location_type.value
 
         # Handle empty locations
         if not location.npcs:
-            self.ui.display_empty_location()
+            self.ui.display_empty_location(location_type=location_type_str)
             self.ui.prompt_continue()
             self._prompt_next_action()
             return
@@ -460,11 +461,11 @@ class Game:
 
         # Check if NPC will even open the door (reputation system)
         if not self.state.reputation.will_open_door(neighborhood_name):
-            self.ui.display_no_answer(npc.name)
+            self.ui.display_no_answer(npc.name, location_type=location_type_str)
             # Record no-answer in memory
             self.memory.record_no_answer(self.state.day_of_week, neighborhood_name)
             # Show thought about being unwelcome
-            no_answer_thought = self.narrative.get_no_answer_thought(context)
+            no_answer_thought = self.narrative.get_no_answer_thought(context, location_type=location_type_str)
             self.ui.display_internal_thought(no_answer_thought)
             apply_hunger(self.state)
             self.ui.display_hunger(self.state.hunger)
@@ -496,7 +497,7 @@ class Game:
         location = self.state.chosen_location
 
         if not location.npcs:
-            self.ui.display_empty_location()
+            self.ui.display_empty_location(location_type="Park")
             self.ui.prompt_continue()
             self._prompt_next_action()
             return
@@ -689,7 +690,7 @@ class Game:
         location = self.state.chosen_location
 
         if not location.npcs:
-            self.ui.display_message("The diner is empty. Just you and the coffee pot.")
+            self.ui.display_empty_location(location_type="Diner")
             self.ui.prompt_continue()
             self._prompt_next_action()
             return
@@ -825,6 +826,11 @@ class Game:
         visit_count = self._get_npc_visit_count(npc.name)
         polite_exit_count = self._get_npc_polite_exit_count(npc.name)
 
+        # Determine location type
+        location_type_str = "House"
+        if self.state.chosen_location:
+            location_type_str = self.state.chosen_location.location_type.value
+
         # Start conversation with relationship data
         conv_state = ConversationState.start(
             npc,
@@ -833,6 +839,7 @@ class Game:
             preacher_personality_bonus=self.state.preacher_personality_bonus,
             visit_count=visit_count,
             polite_exit_count=polite_exit_count,
+            location_type=location_type_str,
         )
 
         # Clear screen for fresh conversation
@@ -927,14 +934,18 @@ class Game:
             self.ui.display_modifiers(result.modifiers, result.interest_change)
 
         # Handle conversation end
-        self.ui.display_conversion_result(result.converted, result.rejected, result.polite_exit)
+        self.ui.display_conversion_result(
+            result.converted, result.rejected, result.polite_exit,
+            location_type=conv_state.location_type,
+        )
 
         # Update reputation based on outcome
         old_rep = self.state.reputation.get_reputation(neighborhood_name)
         if result.converted:
             self._handle_conversion_success(npc_id, neighborhood_name, npc, used_tags)
         elif result.rejected:
-            self._handle_rejection(neighborhood_name, npc, was_aggressive)
+            self._handle_rejection(neighborhood_name, npc, was_aggressive,
+                                   location_type=conv_state.location_type)
         elif result.polite_exit:
             self.state.reputation.on_polite_exit(neighborhood_name)
             self.memory.record_polite_exit(self.state.day_of_week, neighborhood_name, npc.name)
@@ -1198,7 +1209,8 @@ class Game:
         self.events.trigger_success_events(self.state, self.ui)
 
     def _handle_rejection(self, neighborhood_name: str, npc: NPC,
-                          was_aggressive: bool = False) -> None:
+                          was_aggressive: bool = False,
+                          location_type: str = "House") -> None:
         """Handle when NPC rejects player."""
         if was_aggressive:
             self.state.reputation.on_aggressive_failure(neighborhood_name)
@@ -1216,7 +1228,9 @@ class Game:
 
         # Show post-rejection thought
         context = self._get_narrative_context()
-        thought = self.narrative.get_post_rejection_thought(context, npc, was_aggressive)
+        thought = self.narrative.get_post_rejection_thought(
+            context, npc, was_aggressive, location_type=location_type,
+        )
         self.ui.display_internal_thought(thought)
 
         self.events.trigger_bad_response(self.state, self.ui)

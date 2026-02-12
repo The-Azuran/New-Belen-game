@@ -190,6 +190,107 @@ def test_clamp_moral_alignment_within_range():
     assert state.moral_alignment == 42.0
 
 
+# =============================================================================
+# Location-aware conversation text
+# =============================================================================
+
+def test_conversation_state_location_type_default():
+    """ConversationState defaults to House location type."""
+    from preaching.conversation import ConversationState
+    npc = NPC(name="Test", personality="neutral", mood="neutral")
+    state = ConversationState.start(npc)
+    assert state.location_type == "House"
+
+
+def test_conversation_state_location_type_park():
+    """ConversationState accepts custom location type."""
+    from preaching.conversation import ConversationState
+    npc = NPC(name="Test", personality="neutral", mood="neutral")
+    state = ConversationState.start(npc, location_type="Park")
+    assert state.location_type == "Park"
+
+
+def test_ui_display_empty_location_park(capsys):
+    """display_empty_location shows park text for Park location."""
+    from preaching.ui import ConsoleUI
+    ui = ConsoleUI()
+    ui.display_empty_location(location_type="Park")
+    captured = capsys.readouterr()
+    assert "park is empty" in captured.out.lower()
+    assert "door" not in captured.out.lower()
+
+
+def test_ui_display_empty_location_house(capsys):
+    """display_empty_location shows house text by default."""
+    from preaching.ui import ConsoleUI
+    ui = ConsoleUI()
+    ui.display_empty_location()
+    captured = capsys.readouterr()
+    assert "No one is home" in captured.out
+
+
+def test_ui_display_no_answer_diner(capsys):
+    """display_no_answer shows diner text for Diner location."""
+    from preaching.ui import ConsoleUI
+    ui = ConsoleUI()
+    ui.display_no_answer("Jane", location_type="Diner")
+    captured = capsys.readouterr()
+    assert "menu" in captured.out.lower()
+    assert "door" not in captured.out.lower()
+
+
+def test_ui_display_conversion_result_laundromat(capsys):
+    """display_conversion_result shows laundromat rejection text."""
+    from preaching.ui import ConsoleUI
+    ui = ConsoleUI()
+    ui.display_conversion_result(False, True, False, location_type="Laundromat")
+    captured = capsys.readouterr()
+    assert "earbuds" in captured.out.lower()
+    assert "door" not in captured.out.lower()
+
+
+def test_narrative_rejection_thought_non_house():
+    """Post-rejection thought avoids door language for non-house locations."""
+    from preaching.narrative import NarrativeEngine, NarrativeContext
+    from preaching.memory import MemoryManager
+
+    memory = MemoryManager()
+    engine = NarrativeEngine(memory)
+    context = NarrativeContext(
+        day=0, weather="nice", hunger=0, money=10,
+        total_score=0, satanic_score=0, current_neighborhood="Test",
+        rejection_streak=0, conversion_streak=0, reputation_in_area=0,
+    )
+    npc = NPC(name="Test", personality="neutral", mood="neutral")
+
+    # Run many times to check no door-specific text appears
+    random.seed(42)
+    for _ in range(50):
+        thought = engine.get_post_rejection_thought(context, npc, location_type="Park")
+        if thought:
+            assert "door closes" not in thought.lower(), f"Got door text in park: {thought}"
+
+
+def test_narrative_no_answer_thought_non_house():
+    """No-answer thought avoids door language for non-house locations."""
+    from preaching.narrative import NarrativeEngine, NarrativeContext
+    from preaching.memory import MemoryManager
+
+    memory = MemoryManager()
+    engine = NarrativeEngine(memory)
+    context = NarrativeContext(
+        day=0, weather="nice", hunger=0, money=10,
+        total_score=0, satanic_score=0, current_neighborhood="Test",
+        rejection_streak=0, conversion_streak=0, reputation_in_area=0,
+    )
+
+    random.seed(42)
+    for _ in range(50):
+        thought = engine.get_no_answer_thought(context, location_type="Laundromat")
+        if thought:
+            assert "door stays closed" not in thought.lower(), f"Got door text in laundromat: {thought}"
+
+
 if __name__ == "__main__":
     tests = [v for k, v in globals().items() if k.startswith("test_")]
     passed = 0

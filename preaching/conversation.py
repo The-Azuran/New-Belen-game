@@ -61,6 +61,7 @@ class ConversationState:
     polite_exit_count: int = 0  # Warmth from previous polite exits
     npc_resistant: bool = False  # Whether NPC is resistant (for threshold calc)
     warmth_bonus: int = 0  # Bonus applied from relationship warmth
+    location_type: str = "House"  # Type of location (House, Park, Diner, etc.)
 
     @classmethod
     def start(
@@ -71,6 +72,7 @@ class ConversationState:
         preacher_personality_bonus: dict[str, float] | None = None,
         visit_count: int = 0,
         polite_exit_count: int = 0,
+        location_type: str = "House",
     ) -> ConversationState:
         """Start a new conversation with an NPC."""
         mood_data = MOODS.get(npc.mood, MOODS["neutral"])
@@ -104,6 +106,7 @@ class ConversationState:
             polite_exit_count=polite_exit_count,
             npc_resistant=npc.resistant,
             warmth_bonus=warmth_bonus,
+            location_type=location_type,
         )
 
 
