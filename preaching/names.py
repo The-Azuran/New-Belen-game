@@ -179,3 +179,52 @@ def generate_county_name() -> str:
         lambda: f"{random.choice(TOWN_PREFIXES)}{random.choice(TOWN_SUFFIXES)} {random.choice(COUNTY_SUFFIXES)}",
     ]
     return random.choice(patterns)()
+
+
+# New location name pools
+
+PARK_NAMES = [
+    "Memorial Park", "Veterans Park", "Riverside Park", "Centennial Park",
+    "Heritage Park", "Freedom Park", "Pioneer Park", "Sunset Park",
+    "Community Park", "Founders Park", "Lions Park", "Rotary Park",
+]
+
+DINER_NAMES = [
+    "Rosie's Diner", "The Bluejay Cafe", "Waffle Barn", "Main Street Grill",
+    "Pop's Place", "The Golden Spoon", "Country Kitchen", "Dot's Diner",
+    "The Lunch Box", "Home Cookin'", "The Hungry Fork", "Route 9 Diner",
+    "Sunnyside Cafe", "The Pie Hole", "Mom's Kitchen",
+]
+
+LAUNDROMAT_NAMES = [
+    "Suds & Duds", "Wash-O-Matic", "The Laundry Basket", "Clean Machine",
+    "Spin Cycle Laundromat", "Fluff & Fold", "Bubbles Laundromat",
+    "EZ Wash", "The Soap Box", "Lucky Laundry",
+]
+
+COMMUNITY_CENTER_NAMES = [
+    "Community Center", "Civic Center", "Recreation Center",
+    "Youth Center", "Senior Center", "Cultural Center",
+]
+
+
+def generate_park_name() -> str:
+    """Generate a random park name."""
+    return random.choice(PARK_NAMES)
+
+
+def generate_diner_name() -> str:
+    """Generate a random diner name."""
+    return random.choice(DINER_NAMES)
+
+
+def generate_laundromat_name() -> str:
+    """Generate a random laundromat name."""
+    return random.choice(LAUNDROMAT_NAMES)
+
+
+def generate_community_center_name() -> str:
+    """Generate a random community center name."""
+    street = random.choice(STREET_NAMES)
+    center_type = random.choice(COMMUNITY_CENTER_NAMES)
+    return f"{street} {center_type}"

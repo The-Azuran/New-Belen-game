@@ -16,6 +16,10 @@ from .names import (
     generate_street_name,
     generate_town_name,
     generate_county_name,
+    generate_park_name,
+    generate_diner_name,
+    generate_laundromat_name,
+    generate_community_center_name,
 )
 from .config import LOCATION_WEIGHTS, STARTING_MONEY
 from .dialogue import PERSONALITIES, MOODS
@@ -61,6 +65,7 @@ class Location:
     """A place in the neighborhood."""
     location_type: LocationType = LocationType.HOUSE
     name: str = ""
+    description: str = ""  # Physical description, generated at world creation
     npcs: list[NPC] = field(default_factory=list)
     affiliation: Optional[Religion] = None  # For churches
     inventory: list = field(default_factory=list)  # For stores
@@ -68,9 +73,11 @@ class Location:
     @classmethod
     def create_house(cls, num_npcs: int) -> Location:
         """Create a house location."""
+        from .descriptions import generate_house_description
         return cls(
             location_type=LocationType.HOUSE,
             name=generate_house_address(),
+            description=generate_house_description(),
             npcs=[NPC() for _ in range(num_npcs)],
         )
 
@@ -78,9 +85,11 @@ class Location:
     def create_store(cls) -> Location:
         """Create a store location."""
         from .items import get_random_store_inventory
+        from .descriptions import generate_store_description
         return cls(
             location_type=LocationType.STORE,
             name=generate_store_name(),
+            description=generate_store_description(),
             npcs=[NPC()],  # Store clerk
             inventory=get_random_store_inventory(),
         )
@@ -88,6 +97,7 @@ class Location:
     @classmethod
     def create_church(cls, affiliation: Optional[Religion] = None) -> Location:
         """Create a church location."""
+        from .descriptions import generate_church_description
         # Random affiliation if not specified (excluding Satanic usually)
         if affiliation is None:
             choices = [Religion.EVANGELIST, Religion.JEHOVAHS_WITNESS,
@@ -102,6 +112,7 @@ class Location:
         return cls(
             location_type=LocationType.CHURCH,
             name=generate_church_name(aff_str),
+            description=generate_church_description(),
             npcs=[NPC() for _ in range(random.randint(3, 8))],
             affiliation=affiliation,
         )
@@ -109,10 +120,61 @@ class Location:
     @classmethod
     def create_library(cls) -> Location:
         """Create a library location."""
+        from .descriptions import generate_library_description
         return cls(
             location_type=LocationType.LIBRARY,
             name=generate_library_name(),
+            description=generate_library_description(),
             npcs=[NPC()],  # Librarian
+        )
+
+    @classmethod
+    def create_park(cls) -> Location:
+        """Create a park location."""
+        from .descriptions import generate_park_description
+        return cls(
+            location_type=LocationType.PARK,
+            name=generate_park_name(),
+            description=generate_park_description(),
+            npcs=[NPC() for _ in range(random.randint(2, 6))],
+        )
+
+    @classmethod
+    def create_diner(cls) -> Location:
+        """Create a diner location."""
+        from .descriptions import generate_diner_description
+        return cls(
+            location_type=LocationType.DINER,
+            name=generate_diner_name(),
+            description=generate_diner_description(),
+            npcs=[NPC() for _ in range(random.randint(3, 8))],
+        )
+
+    @classmethod
+    def create_laundromat(cls) -> Location:
+        """Create a laundromat location."""
+        from .descriptions import generate_laundromat_description
+        return cls(
+            location_type=LocationType.LAUNDROMAT,
+            name=generate_laundromat_name(),
+            description=generate_laundromat_description(),
+            npcs=[NPC() for _ in range(random.randint(1, 4))],
+        )
+
+    @classmethod
+    def create_community_center(cls, affiliation: Optional[Religion] = None) -> Location:
+        """Create a community center location."""
+        from .descriptions import generate_community_center_description
+        if affiliation is None:
+            choices = [Religion.EVANGELIST, Religion.JEHOVAHS_WITNESS,
+                       Religion.MORMON, Religion.CUSTOM, None, None]
+            affiliation = random.choice(choices)
+        return cls(
+            location_type=LocationType.COMMUNITY_CENTER,
+            name=generate_community_center_name(),
+            description=generate_community_center_description(),
+            npcs=[NPC() for _ in range(random.randint(4, 10))],
+            affiliation=affiliation,
         )
 
     @classmethod
@@ -132,6 +194,14 @@ class Location:
                     return cls.create_church()
                 elif loc_type == "LIBRARY":
                     return cls.create_library()
+                elif loc_type == "PARK":
+                    return cls.create_park()
+                elif loc_type == "DINER":
+                    return cls.create_diner()
+                elif loc_type == "LAUNDROMAT":
+                    return cls.create_laundromat()
+                elif loc_type == "COMMUNITY_CENTER":
+                    return cls.create_community_center()
 
         # Fallback to house
         return cls.create_house(random.randint(1, 6))
@@ -320,6 +390,10 @@ class GameState:
     demon_encounters: int = 0
     demon_defeats: int = 0
     current_combat: Optional[CombatState] = None
+    # Demon ally system
+    demon_allies: list[dict] = field(default_factory=list)
+    demon_betrayals: int = 0
+    moral_alignment: float = 0.0  # -100 (evil) to +100 (good)
 
     @classmethod
     def create_new_game(cls, seed: Optional[int] = None) -> "GameState":
@@ -383,6 +457,10 @@ class GameState:
         if self.current_neighborhood:
             bonus += self.current_neighborhood.get_total_conversion_modifier()
         return bonus
+
+    def clamp_moral_alignment(self) -> None:
+        """Clamp moral_alignment to [-100, +100]."""
+        self.moral_alignment = max(-100.0, min(100.0, self.moral_alignment))
 
     def get_personality_bonus(self, personality: str) -> float:
         """Get bonus for a specific NPC personality based on preacher."""

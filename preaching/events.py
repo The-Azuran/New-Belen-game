@@ -14,6 +14,10 @@ from .config import (
     SATANIC_BIBLE_CHANCE,
     FOOD_OR_BIBLE_SPLIT,
     SATANIC_ALLY_BONUS,
+    DEMON_ALLY_SATANIC_BIBLE_SCALE,
+    DEMON_ALLY_ENCOUNTER_SCALE,
+    MAX_SATANIC_BIBLE_CHANCE,
+    MAX_DEMON_ENCOUNTER_CHANCE,
 )
 from .enums import Religion, DemonType
 from .logic import reduce_hunger
@@ -131,8 +135,17 @@ class EventManager:
                 event.handler(state, ui)
 
     def trigger_bad_response(self, state: GameState, ui: ConsoleUI) -> None:
-        """Handle bad response events (the hidden Satanic mechanic)."""
-        if random.random() < SATANIC_BIBLE_CHANCE:
+        """Handle bad response events (the hidden Satanic mechanic).
+
+        Demon allies increase the chance of satanic recruitment and
+        demon encounters - keeping demons corrupts you further.
+        """
+        # Scale satanic bible chance with demon allies
+        ally_count = len(state.demon_allies)
+        scaled_bible_chance = SATANIC_BIBLE_CHANCE + (ally_count * DEMON_ALLY_SATANIC_BIBLE_SCALE)
+        scaled_bible_chance = min(scaled_bible_chance, MAX_SATANIC_BIBLE_CHANCE)
+
+        if random.random() < scaled_bible_chance:
             # Something special happens
             if random.random() < FOOD_OR_BIBLE_SPLIT:
                 # Sometimes they give food anyway
@@ -144,8 +157,12 @@ class EventManager:
                 # Satanic preachers meet allies
                 handle_satanic_ally(state, ui)
 
-        # Check for demon encounter on failed conversion (15% chance when satanic_score > 5)
-        if state.satanic_score > 5 and random.random() < 0.15:
+        # Demon encounter: allies lower threshold and increase chance
+        encounter_threshold = max(2, 5 - ally_count)
+        encounter_chance = 0.15 + (ally_count * DEMON_ALLY_ENCOUNTER_SCALE)
+        encounter_chance = min(encounter_chance, MAX_DEMON_ENCOUNTER_CHANCE)
+
+        if state.satanic_score > encounter_threshold and random.random() < encounter_chance:
             trigger_demon_encounter(state, ui)
 
 

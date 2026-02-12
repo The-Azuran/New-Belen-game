@@ -8,6 +8,14 @@ from .config import (
     GAME_DAYS,
     SATANIC_VICTORY_THRESHOLD,
     DAYS,
+    DEMON_BETRAYAL_RATES,
+    DEMON_CAPTURE_CORRUPTION,
+    DEMON_CAPTURE_ALIGNMENT_PENALTY,
+    DEMON_BANISH_ALIGNMENT_BONUS,
+    COFFEE_COST,
+    COFFEE_INTEREST_BONUS,
+    DINER_KICK_OUT_THRESHOLD,
+    PARK_WALK_AWAY_CHANCE,
 )
 from .enums import LocationType, Religion
 from .events import EventManager
@@ -34,6 +42,7 @@ from .ui import ConsoleUI
 from .conversation import ConversationEngine, ConversationState
 from .memory import MemoryManager
 from .narrative import NarrativeEngine, NarrativeContext
+from .world_sim import WorldSimulator
 from .preachers import PREACHERS, create_custom_preacher
 from .save_load import save_game, load_game, list_saves
 
@@ -49,6 +58,8 @@ class Game:
         self.conversation = ConversationEngine()
         self.memory = MemoryManager()
         self.narrative = NarrativeEngine(self.memory)
+        self.world_sim = WorldSimulator()
+        self._pending_world_events: list = []
 
     def run(self) -> None:
         """Run the main game loop."""
@@ -209,6 +220,27 @@ class Game:
 
         self.ui.display_new_day(day_name, self.state.weather.value)
 
+        # Show overnight world events from previous day
+        if self._pending_world_events:
+            self.ui.display_world_events(self._pending_world_events)
+            # Apply any reputation changes from world events
+            for event in self._pending_world_events:
+                if event.reputation_change and event.target_neighborhood:
+                    self.state.reputation.modify_reputation(
+                        event.target_neighborhood, event.reputation_change
+                    )
+                elif event.reputation_change and event.neighborhood:
+                    self.state.reputation.modify_reputation(
+                        event.neighborhood, event.reputation_change
+                    )
+            self._pending_world_events = []
+
+        # Check demon ally betrayals at start of day
+        self._check_demon_betrayals()
+
+        # Show demon ally status if any
+        self.ui.display_demon_ally_status(self.state.demon_allies)
+
         # Weather narrative
         weather_narrative = self.narrative.get_weather_narrative(
             self.state.weather.value,
@@ -235,6 +267,11 @@ class Game:
         summary = self.memory.end_day(ended_hungry)
         journal_entry = self.narrative.generate_journal_entry(summary)
         self.ui.display_journal_entry(journal_entry)
+
+        # Simulate world events overnight
+        self._pending_world_events = self.world_sim.simulate_night(
+            self.state, self.memory, summary
+        )
 
         # Offer to save progress
         self._save_game()
@@ -368,7 +405,14 @@ class Game:
                 self._handle_church()
             elif location.location_type == LocationType.LIBRARY:
                 self._handle_library()
+            elif location.location_type == LocationType.DINER:
+                self._handle_diner()
+            elif location.location_type == LocationType.COMMUNITY_CENTER:
+                self._handle_community_center()
+            elif location.location_type == LocationType.PARK:
+                self._handle_park()
             else:
+                # Houses, laundromats - standard preaching
                 self._handle_house()
 
             if is_day_over(self.state):
@@ -440,6 +484,56 @@ class Game:
         if not is_day_over(self.state):
             if self.ui.prompt_continue_or_dashboard():
                 self.ui.display_dashboard(self.state)
+
+    def _handle_park(self) -> None:
+        """Handle a park location.
+
+        Special mechanic: NPCs may walk away before conversation starts
+        (PARK_WALK_AWAY_CHANCE). Otherwise, standard preaching.
+        """
+        assert self.state.chosen_location is not None
+        assert self.state.current_neighborhood is not None
+        location = self.state.chosen_location
+
+        if not location.npcs:
+            self.ui.display_empty_location()
+            self.ui.prompt_continue()
+            self._prompt_next_action()
+            return
+
+        self.ui.display_location_npcs(location.npcs)
+        print("\nChoose a person to approach or enter 0 to move on.")
+
+        choice = self.ui._get_valid_input("Enter your choice: ", 0, len(location.npcs))
+
+        if choice == 0:
+            self.ui.display_moving_on()
+            self._prompt_next_action()
+            return
+
+        npc_id = choice - 1
+        npc = location.npcs[npc_id]
+
+        if npc.converted:
+            self.ui.display_already_converted()
+            return
+
+        # Park-specific: NPC may walk away before you can talk
+        if random.random() < PARK_WALK_AWAY_CHANCE:
+            self.ui.display_message(
+                f"\n{npc.name} waves politely and walks away before you can start talking."
+            )
+            self.memory.record_polite_exit(
+                self.state.day_of_week,
+                self.state.current_neighborhood.name,
+                npc.name,
+            )
+            apply_hunger(self.state)
+            self.ui.display_hunger(self.state.hunger)
+            return
+
+        # Otherwise, standard house interaction from this point
+        self._handle_house()
 
     def _handle_store(self) -> None:
         """Handle a store location."""
@@ -583,6 +677,96 @@ class Game:
 
             if is_day_over(self.state):
                 return
+
+    def _handle_diner(self) -> None:
+        """Handle a diner location.
+
+        Special mechanic: you can buy someone coffee ($2) for an interest
+        bonus before talking to them. Otherwise, standard conversation.
+        """
+        assert self.state.chosen_location is not None
+        assert self.state.current_neighborhood is not None
+        location = self.state.chosen_location
+
+        if not location.npcs:
+            self.ui.display_message("The diner is empty. Just you and the coffee pot.")
+            self.ui.prompt_continue()
+            self._prompt_next_action()
+            return
+
+        # Offer to buy coffee before approaching
+        if self.state.money >= COFFEE_COST:
+            if self.ui.prompt_yes_no(
+                f"Buy a round of coffee for the table? (${COFFEE_COST})"
+            ):
+                self.state.money -= COFFEE_COST
+                self.ui.display_message(
+                    "You buy coffee for the table. Folks warm up a little."
+                )
+                # Apply a temporary reputation boost for this visit
+                neighborhood_name = self.state.current_neighborhood.name
+                self.state.reputation.modify_reputation(neighborhood_name, 2)
+
+        # Standard house-style NPC interaction
+        self._handle_house()
+
+    def _handle_community_center(self) -> None:
+        """Handle a community center location.
+
+        Special mechanic: if the center has a religious affiliation that
+        doesn't match yours, the man with the clipboard asks you to leave.
+        If you stay anyway, it causes problems.
+        """
+        assert self.state.chosen_location is not None
+        assert self.state.current_neighborhood is not None
+        location = self.state.chosen_location
+        neighborhood_name = self.state.current_neighborhood.name
+
+        # Affiliation check
+        if (location.affiliation is not None and
+                location.affiliation != self.state.religion):
+            self.ui.display_message(
+                f"A man with a clipboard looks you over."
+            )
+            self.ui.display_message(
+                f"'This is a {location.affiliation.value} community center. "
+                f"Are you with us?'"
+            )
+
+            if self.ui.prompt_yes_no("Lie and say yes?"):
+                # Lying - risky but you get in
+                self.ui.display_message(
+                    "He eyes you suspiciously but lets you in."
+                )
+                self.state.moral_alignment -= 3  # Small corruption
+                self.state.clamp_moral_alignment()
+            else:
+                # Honest - you get asked to leave
+                self.ui.display_message(
+                    "'I'm sorry, this space is reserved for our members. "
+                    "You're welcome to attend our public events though.'"
+                )
+                if self.ui.prompt_yes_no("Insist on staying anyway?"):
+                    self.ui.display_message(
+                        "He calls over two large men. You're escorted out."
+                    )
+                    self.ui.display_message(
+                        "Word spreads quickly. You're not welcome here."
+                    )
+                    self.state.reputation.modify_reputation(
+                        neighborhood_name, -5
+                    )
+                    self._prompt_next_action()
+                    return
+                else:
+                    self.ui.display_message("You leave respectfully.")
+                    self.state.moral_alignment += 1
+                    self.state.clamp_moral_alignment()
+                    self._prompt_next_action()
+                    return
+
+        # Inside the community center - treat like a house with lots of people
+        self._handle_house()
 
     def _prompt_next_action(self) -> None:
         """Prompt player for next action after leaving a location."""
@@ -875,13 +1059,8 @@ class Game:
 
                 # Record outcome in memory
                 if result.demon_defeated:
-                    self.memory.record_demon_defeat(
-                        day=self.state.day_of_week,
-                        neighborhood=neighborhood_name,
-                        npc_name=npc.name,
-                        demon_type=combat_state.demon_type.value,
-                        combat_type=combat_state.combat_type.value
-                    )
+                    # Offer capture choice before recording
+                    self._offer_demon_capture(npc, combat_state, neighborhood_name)
                 elif result.player_fled:
                     self.memory.record_demon_escape(
                         day=self.state.day_of_week,
@@ -913,6 +1092,82 @@ class Game:
         # Clean up if combat wasn't already ended
         if self.state.current_combat:
             combat_engine.end_combat(combat_state, self.state, False)
+
+    def _check_demon_betrayals(self) -> None:
+        """Check each demon ally for betrayal at the start of the day."""
+        if not self.state.demon_allies:
+            return
+
+        allies_to_remove = []
+        for ally in self.state.demon_allies:
+            if random.random() < ally["betrayal_chance"]:
+                demon_type = ally["demon_type"]
+
+                # Random betrayal effect
+                if random.random() < 0.5:
+                    effect = "It sabotages your reputation, turning people against you."
+                    self.state.reputation.add_reputation("demon_betrayal", -5)
+                else:
+                    effect = "It attacks your spirit, draining your faith!"
+                    self.state.faith = max(0, self.state.faith - 15)
+
+                self.ui.display_demon_betrayal(demon_type, effect)
+                allies_to_remove.append(ally)
+                self.state.demon_betrayals += 1
+                self.state.moral_alignment += 3  # Suffering betrayal nudges alignment back
+                self.state.clamp_moral_alignment()
+
+                neighborhood = ""
+                if self.state.current_neighborhood:
+                    neighborhood = self.state.current_neighborhood.name
+                self.memory.record_demon_betrayal(
+                    day=self.state.day_of_week,
+                    neighborhood=neighborhood,
+                    demon_type=demon_type,
+                )
+
+        for ally in allies_to_remove:
+            self.state.demon_allies.remove(ally)
+
+    def _offer_demon_capture(self, npc: NPC, combat_state: "CombatState",
+                             neighborhood_name: str) -> None:
+        """After defeating a demon, offer capture/banish/escape choice."""
+        demon_type = combat_state.demon_type.value
+        choice = self.ui.display_demon_capture_choice(demon_type)
+
+        if choice == 1:  # Capture
+            betrayal_chance = DEMON_BETRAYAL_RATES.get(demon_type, 0.08)
+            ally = {
+                "name": npc.name,
+                "demon_type": demon_type,
+                "capture_day": self.state.day_of_week,
+                "betrayal_chance": betrayal_chance,
+            }
+            self.state.demon_allies.append(ally)
+            self.state.satanic_score += DEMON_CAPTURE_CORRUPTION
+            self.state.moral_alignment += DEMON_CAPTURE_ALIGNMENT_PENALTY
+            self.state.clamp_moral_alignment()
+            self.ui.display_demon_captured(demon_type)
+            self.memory.record_demon_capture(
+                day=self.state.day_of_week,
+                neighborhood=neighborhood_name,
+                npc_name=npc.name,
+                demon_type=demon_type,
+            )
+        elif choice == 2:  # Banish
+            self.state.demon_defeats += 1
+            self.state.moral_alignment += DEMON_BANISH_ALIGNMENT_BONUS
+            self.state.clamp_moral_alignment()
+            self.ui.display_demon_banished(demon_type)
+            self.memory.record_demon_defeat(
+                day=self.state.day_of_week,
+                neighborhood=neighborhood_name,
+                npc_name=npc.name,
+                demon_type=demon_type,
+                combat_type=combat_state.combat_type.value,
+            )
+        else:  # Escape
+            self.ui.display_demon_escaped(demon_type)
 
     def _handle_conversion_success(self, npc_id: int, neighborhood_name: str, npc: NPC,
                                     approach_tags: list[str]) -> None:

@@ -65,13 +65,44 @@ FRIENDLY_CHURCH_BUFF = 0.15
 HOSTILE_CHURCH_DEBUFF = -0.10
 CHURCH_CHASE_HUNGER_COST = 10
 
+# Demon ally mechanics
+DEMON_BETRAYAL_RATES: dict[str, float] = {
+    "temptation": 0.08,
+    "deception": 0.12,
+    "oppression": 0.05,
+    "possession": 0.15,
+}
+DEMON_CAPTURE_CORRUPTION = 3
+DEMON_CAPTURE_ALIGNMENT_PENALTY = -10.0
+DEMON_BANISH_ALIGNMENT_BONUS = 5.0
+DEMON_ALLY_SATANIC_BIBLE_SCALE = 0.05
+DEMON_ALLY_ENCOUNTER_SCALE = 0.05
+MAX_SATANIC_BIBLE_CHANCE = 0.35
+MAX_DEMON_ENCOUNTER_CHANCE = 0.40
+
 # Library costs
 LIBRARY_RESEARCH_HUNGER = 5
 
 # Location generation weights (out of 100)
 LOCATION_WEIGHTS = {
-    "HOUSE": 70,
-    "STORE": 12,
-    "CHURCH": 12,
-    "LIBRARY": 6,
+    "HOUSE": 55,
+    "STORE": 10,
+    "CHURCH": 10,
+    "LIBRARY": 5,
+    "PARK": 7,
+    "DINER": 5,
+    "LAUNDROMAT": 4,
+    "COMMUNITY_CENTER": 4,
 }
+
+# Park mechanics
+PARK_WALK_AWAY_CHANCE = 0.25  # NPCs can walk away mid-conversation
+PARK_EXTRA_PATIENCE = 1       # People expect preachers at parks
+
+# Diner mechanics
+COFFEE_COST = 2               # Buy someone coffee for conversion bonus
+COFFEE_INTEREST_BONUS = 10    # Interest bonus from buying coffee
+DINER_KICK_OUT_THRESHOLD = -15  # Get kicked out if interest drops this low
+
+# Community center mechanics
+COMMUNITY_CENTER_AFFILIATION_CHECK = True  # Must match affiliation or get asked to leave

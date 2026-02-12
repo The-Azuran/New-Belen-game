@@ -29,6 +29,10 @@ class LocationType(Enum):
     STORE = "Store"
     CHURCH = "Church"
     LIBRARY = "Library"
+    PARK = "Park"
+    DINER = "Diner"
+    LAUNDROMAT = "Laundromat"
+    COMMUNITY_CENTER = "Community Center"
 
 
 class CombatType(Enum):

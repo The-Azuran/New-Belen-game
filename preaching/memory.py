@@ -26,6 +26,9 @@ class EventType(Enum):
     DEMON_ENCOUNTER = "demon_encounter"
     DEMON_DEFEAT = "demon_defeat"
     DEMON_ESCAPE = "demon_escape"
+    DEMON_CAPTURE = "demon_capture"
+    DEMON_BETRAYAL = "demon_betrayal"
+    DEMON_BANISH = "demon_banish"
     PHYSICAL_CONFRONTATION = "physical_confrontation"
 
 
@@ -356,6 +359,41 @@ class MemoryManager:
             neighborhood=neighborhood,
             npc_name=npc_name,
             tags=["combat", "physical", "danger"],
+        ))
+
+    def record_demon_capture(self, day: int, neighborhood: str, npc_name: str,
+                            demon_type: str) -> None:
+        """Record capturing a demon as an ally."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_CAPTURE,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            details={"demon_type": demon_type},
+            tags=["dark_path", "corrupted", "supernatural"],
+        ))
+
+    def record_demon_betrayal(self, day: int, neighborhood: str,
+                              demon_type: str) -> None:
+        """Record a demon ally betrayal."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_BETRAYAL,
+            neighborhood=neighborhood,
+            details={"demon_type": demon_type},
+            tags=["danger", "consequence", "supernatural"],
+        ))
+
+    def record_demon_banish(self, day: int, neighborhood: str, npc_name: str,
+                            demon_type: str) -> None:
+        """Record banishing a demon."""
+        self.add_memory(Memory(
+            day=day,
+            event_type=EventType.DEMON_BANISH,
+            neighborhood=neighborhood,
+            npc_name=npc_name,
+            details={"demon_type": demon_type},
+            tags=["combat", "victory", "righteous"],
         ))
 
     # Query methods for narrative generation

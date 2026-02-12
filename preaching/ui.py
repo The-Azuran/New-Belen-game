@@ -274,15 +274,21 @@ class ConsoleUI:
                 LocationType.STORE: "[Store]",
                 LocationType.CHURCH: "[Church]",
                 LocationType.LIBRARY: "[Library]",
+                LocationType.PARK: "[Park]",
+                LocationType.DINER: "[Diner]",
+                LocationType.LAUNDROMAT: "[Laundromat]",
+                LocationType.COMMUNITY_CENTER: "[Community Center]",
             }.get(location.location_type, "")
             print(f"{i}. {type_icon} {location.name}")
 
     def display_location_header(self, location: Location) -> None:
-        """Display the current location header."""
+        """Display the current location header with physical description."""
         from .enums import LocationType, Religion
         print(f"\n--- {location.name} ---")
-        # Show affiliation for churches, but hide Satanic (mysterious)
-        if location.location_type == LocationType.CHURCH and location.affiliation:
+        if location.description:
+            print(f"  {location.description}")
+        # Show affiliation for churches and community centers
+        if location.location_type in (LocationType.CHURCH, LocationType.COMMUNITY_CENTER) and location.affiliation:
             if location.affiliation != Religion.SATANIC:
                 print(f"Affiliation: {location.affiliation.value}")
             else:
@@ -901,3 +907,69 @@ class ConsoleUI:
             print(f"  {line}")
         print()
         print("=" * 50)
+
+    # =========================================================================
+    # Demon ally UI
+    # =========================================================================
+
+    def display_demon_capture_choice(self, demon_type: str) -> int:
+        """Show capture/banish/escape choice after defeating a demon."""
+        print(f"\nThe {demon_type} demon is defeated, weakened before you.")
+        print("It kneels, unable to flee. What do you do?\n")
+        options = [
+            "Capture the demon as an ally",
+            "Banish it completely",
+            "Let it escape",
+        ]
+        return self.display_menu("", options)
+
+    def display_demon_captured(self, demon_type: str) -> None:
+        """Display message when demon is captured."""
+        print(f"\nThe {demon_type} demon bows to your will.")
+        print("'I am yours... for now,' it whispers.")
+        print("You feel something dark settle into place beside you.")
+
+    def display_demon_banished(self, demon_type: str) -> None:
+        """Display message when demon is banished."""
+        print(f"\nYou banish the {demon_type} demon back to the pit.")
+        print("The air clears. The darkness retreats.")
+
+    def display_demon_escaped(self, demon_type: str) -> None:
+        """Display message when demon escapes."""
+        print(f"\nYou step back, allowing the {demon_type} demon to fade away.")
+        print("It will return another day, angrier than before.")
+
+    def display_demon_betrayal(self, demon_type: str, effect: str) -> None:
+        """Display demon ally betrayal."""
+        print(f"\n{'!' * 50}")
+        print(f"  Your {demon_type} demon ally BETRAYS you!")
+        print(f"  {effect}")
+        print(f"{'!' * 50}")
+
+    def display_world_events(self, events: list) -> None:
+        """Display overnight world events at the start of a new day."""
+        if not events:
+            return
+        print("\n" + "-" * 50)
+        print("  OVERNIGHT NEWS")
+        print("-" * 50)
+        for event in events:
+            icon = {
+                "reputation": "*",
+                "gossip": "~",
+                "ripple": "+",
+                "community": "#",
+                "demon": "!",
+            }.get(event.category, "-")
+            print(f"\n  {icon} {event.text}")
+        print("\n" + "-" * 50)
+        input("\nPress Enter to start the day...")
+
+    def display_demon_ally_status(self, allies: list[dict]) -> None:
+        """Display active demon allies."""
+        if not allies:
+            return
+        print(f"\n[DEMON ALLIES: {len(allies)}]")
+        for ally in allies:
+            risk = int(ally["betrayal_chance"] * 100)
+            print(f"  * {ally['demon_type']} demon (betrayal risk: {risk}%)")
